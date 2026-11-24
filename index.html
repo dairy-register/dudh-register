@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a6b3c">
+<title>Dudh Register</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --pri:#1a6b3c;--pri2:#2d8f55;--pri3:#0f4025;
+  --acc:#f5a623;--red:#e74c3c;
+  --bg:#f0f7f2;--card:#ffffff;
+  --tx:#1a2e22;--tx2:#4a6355;--tx3:#8aaa97;
+  --bd:#c8e0d0;
+  --sh2:0 2px 8px rgba(26,107,60,.07);
+  --r:18px;--rs:10px;
+  --hh:60px;--nh:64px;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans','Noto Sans Devanagari',Arial,sans-serif;
+}
+[data-dark]{
+  --bg:#0d1f14;--card:#162a1e;
+  --tx:#e8f5ed;--tx2:#9dc9ae;--tx3:#5a8a6a;
+  --bd:#2a4a35;--pri:#2d8f55;--pri2:#3daf6a;--pri3:#1a6b3c;
+  --sh2:0 2px 8px rgba(0,0,0,.25);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100%;overflow-x:hidden;transition:background .3s,color .3s}
+
+/* HEADER */
+.hdr{position:fixed;top:0;left:0;right:0;z-index:200;height:var(--hh);background:var(--pri);display:flex;align-items:center;justify-content:space-between;padding:0 14px;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+.hdr-logo{display:flex;align-items:center;gap:8px}
+.nm{color:#fff;font-size:1.12rem;font-weight:700;line-height:1.1}
+.sub{color:rgba(255,255,255,.7);font-size:.62rem}
+.hdr-acts{display:flex;gap:5px}
+.ibtn{min-width:32px;height:32px;border-radius:18px;background:rgba(255,255,255,.16);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:var(--font);font-weight:700;font-size:.78rem;padding:0 8px;transition:background .2s}
+.ibtn:active{background:rgba(255,255,255,.32)}
+
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:0;right:0;z-index:200;height:var(--nh);background:var(--card);border-top:1.5px solid var(--bd);display:flex;box-shadow:0 -2px 12px rgba(26,107,60,.07)}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:none;background:none;cursor:pointer;color:var(--tx3);font-family:var(--font);transition:color .2s}
+.ni.on{color:var(--pri)}
+.ni .ic{font-size:1.18rem}
+.ni .lb{font-size:.56rem;font-weight:700}
+
+/* PAGES — key fix: padding-top = header + generous gap */
+.pg{display:none;padding-top:calc(var(--hh) + 18px);padding-bottom:calc(var(--nh) + 16px);min-height:100vh}
+.pg.on{display:block;animation:fu .2s ease}
+@keyframes fu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.wrap{padding:0 12px}
+.ptitle{font-size:1.18rem;font-weight:700;padding:0 12px 12px}
+
+/* CARDS */
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh2);padding:15px;margin-bottom:12px;border:1.5px solid var(--bd)}
+.ctitle{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tx3);margin-bottom:12px}
+
+/* STAT GRID */
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.sc{background:var(--card);border-radius:var(--r);padding:13px 11px;box-shadow:var(--sh2);border:1.5px solid var(--bd);position:relative;overflow:hidden}
+.sc::before{content:'';position:absolute;top:-15px;right:-15px;width:60px;height:60px;border-radius:50%;background:var(--pri);opacity:.05}
+.sic{font-size:1.3rem;margin-bottom:3px}
+.slb{font-size:.64rem;font-weight:600;color:var(--tx3);margin-bottom:2px}
+.sv{font-size:1.35rem;font-weight:800;color:var(--pri);line-height:1.1}
+
+/* FORMS */
+.fg{margin-bottom:11px}
+.fl{font-size:.77rem;font-weight:700;color:var(--tx2);margin-bottom:4px;display:block}
+.fc{width:100%;height:48px;padding:0 12px;border:2px solid var(--bd);border-radius:var(--rs);background:var(--bg);color:var(--tx);font-family:var(--font);font-size:.97rem;font-weight:500;outline:none;transition:border .2s;-webkit-appearance:none;appearance:none}
+.fc:focus{border-color:var(--pri)}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+
+/* BUTTONS */
+.btn{display:flex;align-items:center;justify-content:center;gap:5px;width:100%;height:50px;border-radius:var(--rs);border:none;font-family:var(--font);font-size:.93rem;font-weight:700;cursor:pointer;transition:all .15s;-webkit-appearance:none}
+.btn:active{transform:scale(.97)}
+.btn-p{background:var(--pri);color:#fff;box-shadow:0 3px 12px rgba(26,107,60,.25)}
+.btn-a{background:var(--acc);color:#1a2e22}
+.btn-d{background:var(--red);color:#fff}
+.btn-o{background:transparent;border:2px solid var(--pri);color:var(--pri);height:44px}
+.btn-wa{background:#25D366;color:#fff}
+.btn-sm{height:34px;font-size:.78rem;width:auto;padding:0 10px;border-radius:7px}
+.btn-xs{height:28px;font-size:.7rem;width:auto;padding:0 7px;border-radius:5px}
+
+/* RESULT BOX */
+.rb{background:linear-gradient(135deg,var(--pri),var(--pri2));border-radius:var(--r);padding:15px;color:#fff;margin-top:11px;display:none}
+.rb.on{display:block}
+.rr{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.rr:last-child{margin-bottom:0;border-top:1px solid rgba(255,255,255,.2);padding-top:8px;margin-top:3px}
+.rl{font-size:.78rem;opacity:.85}
+.rv{font-size:1rem;font-weight:800}
+.rbig{font-size:1.6rem;font-weight:800}
+
+/* ERROR BOX */
+.eb{background:rgba(231,76,60,.09);border:1.5px solid var(--red);border-radius:var(--rs);padding:9px 12px;color:var(--red);font-size:.8rem;font-weight:600;margin:8px 0;display:none}
+.eb.on{display:block}
+
+/* FARMER / ENTRY */
+.fi-wrap{background:var(--card);border-radius:var(--rs);padding:11px;margin-bottom:8px;border:1.5px solid var(--bd);box-shadow:var(--sh2);display:flex;align-items:center;gap:9px}
+.favt{width:38px;height:38px;border-radius:50%;background:var(--pri);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:800;flex-shrink:0}
+.finfo{flex:1;min-width:0}
+.fname{font-size:.87rem;font-weight:700}
+.fmeta{font-size:.68rem;color:var(--tx3);margin-top:1px}
+.facts{display:flex;gap:4px}
+
+.ec{background:var(--card);border-radius:var(--rs);padding:11px;margin-bottom:8px;border:1.5px solid var(--bd);box-shadow:var(--sh2)}
+.ec-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.ec-name{font-size:.85rem;font-weight:700}
+.ec-date{font-size:.65rem;color:var(--tx3)}
+.ec-rid{font-size:.6rem;color:var(--tx3);font-weight:700;letter-spacing:.6px;margin-top:1px}
+.ec-dets{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px}
+.ed{text-align:center;background:var(--bg);border-radius:6px;padding:5px 2px}
+.edl{font-size:.57rem;color:var(--tx3);font-weight:600}
+.edv{font-size:.87rem;font-weight:800;color:var(--pri)}
+
+/* TABS */
+.tabs{display:flex;gap:6px;margin-bottom:11px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tb{flex-shrink:0;padding:6px 12px;border-radius:16px;border:2px solid var(--bd);background:var(--card);color:var(--tx2);font-family:var(--font);font-size:.77rem;font-weight:700;cursor:pointer;transition:all .15s}
+.tb.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+
+/* MODAL */
+.prn-h{font-size:.68rem;color:var(--tx3);margin:0 2px 8px;line-height:1.35}
+.moverlay{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);align-items:flex-end;justify-content:center;backdrop-filter:blur(3px)}
+.moverlay.on{display:flex}
+.modal{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:18px 15px 28px;animation:su .24s cubic-bezier(.22,1,.36,1);max-height:88vh;overflow-y:auto}
+@keyframes su{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.mttl{font-size:1.02rem;font-weight:800;margin-bottom:13px;display:flex;justify-content:space-between;align-items:center}
+.mcls{background:var(--bg);border:none;color:var(--tx2);width:27px;height:27px;border-radius:50%;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+/* TOAST */
+.toast{position:fixed;bottom:calc(var(--nh)+10px);left:50%;transform:translateX(-50%) translateY(16px);background:#1a2e22;color:#fff;padding:9px 18px;border-radius:18px;font-size:.8rem;font-weight:600;z-index:500;opacity:0;transition:all .24s;white-space:nowrap;max-width:92vw;text-align:center;pointer-events:none}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* BADGE */
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:14px;font-size:.65rem;font-weight:700}
+.bg-g{background:rgba(26,107,60,.12);color:var(--pri)}
+
+/* PIN */
+.pscreen{display:none;position:fixed;inset:0;z-index:600;background:var(--pri);flex-direction:column;align-items:center;justify-content:center}
+.pscreen.on{display:flex}
+.pdots{display:flex;gap:10px;margin:16px 0}
+.pdot{width:13px;height:13px;border-radius:50%;background:rgba(255,255,255,.25);border:2px solid rgba(255,255,255,.55);transition:background .13s}
+.pdot.on{background:#fff}
+.ppad{display:grid;grid-template-columns:repeat(3,64px);gap:10px}
+.pkey{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.14);border:2px solid rgba(255,255,255,.26);color:#fff;font-size:1.25rem;font-weight:700;font-family:var(--font);cursor:pointer;transition:background .13s;display:flex;align-items:center;justify-content:center}
+.pkey:active{background:rgba(255,255,255,.32)}
+.pkey.ph{visibility:hidden}
+.perr{color:#ffcdd2;font-size:.75rem;margin-top:8px;height:15px}
+.pskip{color:rgba(255,255,255,.6);font-size:.75rem;margin-top:14px;text-decoration:underline;cursor:pointer;background:none;border:none;font-family:var(--font)}
+
+/* SETTINGS */
+.si{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bd)}
+.si:last-child{border-bottom:none}
+.si .slb{font-size:.85rem;font-weight:700}
+.si .ssub{font-size:.68rem;color:var(--tx3);margin-top:1px}
+.tgl{width:40px;height:23px;border-radius:11px;background:var(--bd);border:none;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.tgl::after{content:'';position:absolute;width:17px;height:17px;border-radius:50%;background:#fff;top:3px;left:3px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.tgl.on{background:var(--pri)}
+.tgl.on::after{left:20px}
+
+/* REPORT SUMMARY */
+.rsumm{background:linear-gradient(135deg,var(--pri3),var(--pri));border-radius:var(--r);padding:14px;color:#fff;margin-bottom:11px}
+.rsr{display:flex;justify-content:space-between;margin-bottom:4px}
+.rsr:last-child{margin-bottom:0}
+.rslb{font-size:.75rem;opacity:.8}
+.rsv{font-size:1rem;font-weight:800}
+
+/* FAT DISPLAY */
+.fdsp{background:var(--bg);border-radius:var(--rs);padding:9px 11px;margin-bottom:11px;border:1.5px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+.fdlb{font-size:.7rem;color:var(--tx3);font-weight:600}
+.fdv{font-size:1.08rem;font-weight:800;color:var(--pri)}
+
+/* CALCULATOR */
+.cdsp{background:var(--bg);border-radius:var(--rs);border:2px solid var(--bd);padding:12px 13px;margin-bottom:11px;text-align:right}
+.cexpr{font-size:.75rem;color:var(--tx3);min-height:15px;word-break:break-all}
+.cval{font-size:2rem;font-weight:800;color:var(--tx);line-height:1.1;word-break:break-all}
+.cgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.ck{height:58px;border-radius:var(--rs);border:none;font-family:var(--font);font-size:1.15rem;font-weight:700;cursor:pointer;transition:all .13s;-webkit-appearance:none}
+.ck:active{transform:scale(.93)}
+.ck.cn{background:var(--card);color:var(--tx);border:1.5px solid var(--bd)}
+.ck.co{background:rgba(26,107,60,.1);color:var(--pri);border:1.5px solid var(--bd)}
+.ck.ce{background:var(--pri);color:#fff}
+.ck.cd{background:rgba(231,76,60,.1);color:var(--red);border:1.5px solid rgba(231,76,60,.18)}
+.ck.cc{background:rgba(231,76,60,.13);color:var(--red);border:1.5px solid rgba(231,76,60,.2);font-size:.88rem}
+.ck.cz{grid-column:span 2}
+
+/* EMPTY */
+.empty{text-align:center;padding:32px 20px;color:var(--tx3)}
+.empty .eic{font-size:2.8rem;margin-bottom:8px}
+.empty p{font-size:.85rem;font-weight:600;line-height:1.5}
+
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- PIN -->
+<div class="pscreen" id="pinScreen">
+  <div style="font-size:2.8rem;margin-bottom:7px">🥛</div>
+  <div style="color:#fff;font-size:1.22rem;font-weight:700;margin-bottom:2px">Dudh Register</div>
+  <div style="color:rgba(255,255,255,.7);font-size:.78rem;margin-bottom:4px" id="ps_sub">PIN दर्ज करें</div>
+  <div class="pdots"><div class="pdot" id="d0"></div><div class="pdot" id="d1"></div><div class="pdot" id="d2"></div><div class="pdot" id="d3"></div></div>
+  <div class="ppad">
+    <button class="pkey" onclick="pIn('1')">1</button><button class="pkey" onclick="pIn('2')">2</button><button class="pkey" onclick="pIn('3')">3</button>
+    <button class="pkey" onclick="pIn('4')">4</button><button class="pkey" onclick="pIn('5')">5</button><button class="pkey" onclick="pIn('6')">6</button>
+    <button class="pkey" onclick="pIn('7')">7</button><button class="pkey" onclick="pIn('8')">8</button><button class="pkey" onclick="pIn('9')">9</button>
+    <button class="pkey ph"></button><button class="pkey" onclick="pIn('0')">0</button><button class="pkey" onclick="pDel()">⌫</button>
+  </div>
+  <div class="perr" id="perr"></div>
+  <button class="pskip" onclick="pSkip()" id="ps_skip">पिन के बिना खोलें / Skip</button>
+</div>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-logo">
+    <span style="font-size:24px">🐄</span>
+    <div><div class="nm">Dudh Register</div><div class="sub" id="h_sub">दूध डेयरी प्रबंधन</div></div>
+  </div>
+  <div class="hdr-acts">
+    <button class="ibtn" id="langBtn" onclick="toggleLang()">EN</button>
+    <button class="ibtn" id="themeBtn" onclick="toggleTheme()">🌙</button>
+    <button class="ibtn" onclick="go('settings')">⚙️</button>
+  </div>
+</header>
+
+<!-- BOTTOM NAV -->
+<nav class="bnav">
+  <button class="ni on" id="nav_home" onclick="go('home')"><span class="ic">🏠</span><span class="lb" id="nl_home">होम</span></button>
+  <button class="ni" id="nav_entry" onclick="go('entry')"><span class="ic">🥛</span><span class="lb" id="nl_entry">Entry</span></button>
+  <button class="ni" id="nav_farmers" onclick="go('farmers')"><span class="ic">👨‍🌾</span><span class="lb" id="nl_farmers">किसान</span></button>
+  <button class="ni" id="nav_reports" onclick="go('reports')"><span class="ic">📊</span><span class="lb" id="nl_reports">Report</span></button>
+  <button class="ni" id="nav_tools" onclick="go('tools')"><span class="ic">🧮</span><span class="lb" id="nl_tools">Tools</span></button>
+</nav>
+
+<!-- ═══ HOME ═══ -->
+<div class="pg on" id="pg_home">
+  <div class="ptitle" id="pt_home">🏠 आज का सारांश</div>
+  <div class="wrap">
+    <div class="sgrid">
+      <div class="sc"><div class="sic">🥛</div><div class="slb" id="sl_milk">आज का दूध</div><div class="sv" id="ds_milk">0 L</div></div>
+      <div class="sc"><div class="sic">💰</div><div class="slb" id="sl_pay">आज का भुगतान</div><div class="sv" id="ds_pay">₹0</div></div>
+      <div class="sc"><div class="sic">👨‍🌾</div><div class="slb" id="sl_farm">किसान</div><div class="sv" id="ds_farm">0</div></div>
+      <div class="sc"><div class="sic">📈</div><div class="slb" id="sl_fat">औसत Fat</div><div class="sv" id="ds_fat">0%</div></div>
+    </div>
+    <div class="card">
+      <div class="ctitle" id="ct_today">📋 आज की Entries</div>
+      <div id="today_list"></div>
+    </div>
+    <div class="card">
+      <div class="ctitle" id="ct_quick">⚡ Quick Actions</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+        <button class="btn btn-p" onclick="go('entry')" id="qa_entry">➕ दूध Entry</button>
+        <button class="btn btn-o" onclick="go('reports')" id="qa_report">📊 Report</button>
+        <button class="btn btn-o" onclick="openFarmerModal()" id="qa_addfarm">👨‍🌾 किसान जोड़ें</button>
+        <button class="btn btn-a" onclick="exportCSV()" id="qa_csv">📤 CSV</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ENTRY ═══ -->
+<div class="pg" id="pg_entry">
+  <div class="ptitle" id="pt_entry">🥛 दूध Entry</div>
+  <div class="wrap">
+    <div class="card">
+      <div class="ctitle" id="ct_newentry">📝 नई Entry</div>
+      <div class="fg"><label class="fl" id="lbl_selfarmer">👨‍🌾 किसान चुनें</label><select class="fc" id="ef_farmer"></select></div>
+      <div class="fr">
+        <div class="fg"><label class="fl" id="lbl_emilk">🥛 दूध (L)</label><input type="number" class="fc" id="ef_milk" placeholder="0.0" step="0.1" min="0" oninput="calcEntry()"></div>
+        <div class="fg"><label class="fl">💧 Fat %</label><input type="number" class="fc" id="ef_fat" placeholder="0.0" step="0.1" min="0" max="15" oninput="calcEntry()"></div>
+      </div>
+      <div class="fdsp">
+        <div><div class="fdlb" id="lbl_rateper">Rate per Fat Unit</div><div style="font-size:.67rem;color:var(--tx3)">₹/Fat/Litre</div></div>
+        <div style="text-align:right"><div class="fdv">₹<span id="ef_rateshow">9.50</span></div><button class="btn btn-xs btn-o" onclick="openRateModal()" style="margin-top:3px" id="btn_chrate">✏️ बदलें</button></div>
+      </div>
+      <div class="rb" id="entry_rb">
+        <div class="rr"><span class="rl" id="er_lmilk">🥛 दूध</span><span class="rv" id="er_milk">0 L</span></div>
+        <div class="rr"><span class="rl">💧 Fat %</span><span class="rv" id="er_fat">0%</span></div>
+        <div class="rr"><span class="rl" id="er_lrate">💵 Rate</span><span class="rv" id="er_rate">₹0</span></div>
+        <div class="rr"><span class="rl" id="er_lamount">💰 कुल Amount</span><span class="rbig" id="er_amount">₹0</span></div>
+      </div>
+      <div style="margin-top:11px"><button class="btn btn-p" onclick="saveEntry()" id="btn_saveentry">💾 Entry सेव करें</button></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="font-size:.95rem;font-weight:700" id="st_recent">📋 हाल की Entries</div>
+      <button class="btn btn-sm btn-o" onclick="go('reports')" id="btn_viewall">सभी देखें</button>
+    </div>
+    <div id="recent_list"></div>
+  </div>
+</div>
+
+<!-- ═══ FARMERS ═══ -->
+<div class="pg" id="pg_farmers">
+  <div class="ptitle" id="pt_farmers">👨‍🌾 किसान</div>
+  <div class="wrap">
+    <button class="btn btn-p" onclick="openFarmerModal()" style="margin-bottom:11px" id="btn_addfarm">➕ नया किसान जोड़ें</button>
+    <div id="farmers_list"></div>
+  </div>
+</div>
+
+<!-- ═══ REPORTS ═══ -->
+<div class="pg" id="pg_reports">
+  <div class="ptitle" id="pt_reports">📊 Reports</div>
+  <div class="wrap">
+    <div class="tabs" id="rep_tabs">
+      <button class="tb on" onclick="switchRepTab('daily',this)" id="rt_today">आज</button>
+      <button class="tb" onclick="switchRepTab('weekly',this)" id="rt_week">सप्ताह</button>
+      <button class="tb" onclick="switchRepTab('monthly',this)" id="rt_month">माह</button>
+      <button class="tb" onclick="switchRepTab('all',this)" id="rt_all">सभी</button>
+    </div>
+    <div class="fg"><label class="fl" id="lbl_filterfarm">👨‍🌾 किसान फिल्टर</label><select class="fc" id="rep_farmer" onchange="renderReports()"></select></div>
+    <div class="rsumm" id="rep_summ" style="display:none">
+      <div class="rsr"><span class="rslb" id="rsl_milk">कुल दूध</span><span class="rsv" id="rs_milk">0 L</span></div>
+      <div class="rsr"><span class="rslb" id="rsl_fat">औसत Fat</span><span class="rsv" id="rs_fat">0%</span></div>
+      <div class="rsr"><span class="rslb" id="rsl_pay">कुल भुगतान</span><span class="rsv" id="rs_pay">₹0</span></div>
+    </div>
+    <div style="display:flex;gap:7px;margin-bottom:11px">
+      <button class="btn btn-a btn-sm" style="flex:1" onclick="exportCSV()" id="btn_rcsv">📤 CSV</button>
+      <button class="btn btn-p btn-sm" style="flex:1" onclick="openBillModal()" id="btn_rbill">🧾 Bill PDF</button>
+    </div>
+    <div id="reports_list"></div>
+  </div>
+</div>
+
+<!-- ═══ TOOLS ═══ -->
+<div class="pg" id="pg_tools">
+  <div class="ptitle" id="pt_tools">🧮 Tools</div>
+  <div class="wrap">
+    <div class="tabs" id="tool_tabs">
+      <button class="tb on" onclick="switchToolTab('milk',this)" id="tt_milk">🥛 Milk Ops</button>
+      <button class="tb" onclick="switchToolTab('pay',this)" id="tt_pay">💰 Payment</button>
+      <button class="tb" onclick="switchToolTab('mix',this)" id="tt_mix">🔀 Mix</button>
+      <button class="tb" onclick="switchToolTab('calc',this)" id="tt_calc">🔢 Calculator</button>
+    </div>
+
+    <!-- MILK OPS -->
+    <div id="tool_milk">
+      <div class="tabs" id="milk_tabs">
+        <button class="tb on" onclick="switchMilkTab('reduce',this)" id="mt_red">💧 Fat घटाएं</button>
+        <button class="tb" onclick="switchMilkTab('increase',this)" id="mt_inc">⬆️ Fat बढ़ाएं</button>
+      </div>
+      <div id="milk_reduce">
+        <div class="card">
+          <div class="ctitle" id="ct_reduce">💧 Fat कम करें</div>
+          <p style="font-size:.74rem;color:var(--tx3);margin-bottom:10px" id="desc_reduce">पानी या कम Fat दूध मिलाकर Fat% कम करें</p>
+          <div class="fr">
+            <div class="fg"><label class="fl" id="lbl_dilmilk">🥛 दूध (L)</label><input type="number" class="fc" id="dil_milk" placeholder="10" step="0.1" min="0"></div>
+            <div class="fg"><label class="fl" id="lbl_dilcur">मौजूदा Fat %</label><input type="number" class="fc" id="dil_cur" placeholder="7.5" step="0.1" min="0" max="15"></div>
+          </div>
+          <div class="fr">
+            <div class="fg"><label class="fl" id="lbl_diltgt">🎯 Target Fat %</label><input type="number" class="fc" id="dil_tgt" placeholder="5.0" step="0.1" min="0" max="15"></div>
+            <div class="fg"><label class="fl" id="lbl_diltype">मिलाएं</label><select class="fc" id="dil_type" onchange="toggleLF()"><option value="water" id="opt_water">💧 पानी</option><option value="lowfat" id="opt_lowfat">🥛 कम Fat दूध</option></select></div>
+          </div>
+          <div id="dil_lfrow" style="display:none"><div class="fg"><label class="fl" id="lbl_lfpct">Low-fat दूध का Fat %</label><input type="number" class="fc" id="dil_lfpct" placeholder="2.0" step="0.1" min="0"></div></div>
+          <div class="eb" id="dil_err"></div>
+          <button class="btn btn-p" onclick="calcDilute()" id="btn_dilcalc">🔢 Calculate करें</button>
+          <div class="rb" id="dil_rb">
+            <div class="rr"><span class="rl" id="rl_dilsrc">मूल दूध</span><span class="rv" id="dr_src"></span></div>
+            <div class="rr"><span class="rl" id="rl_diladd">मिलाएं</span><span class="rv" id="dr_add"></span></div>
+            <div class="rr"><span class="rl" id="rl_diltot">कुल मिश्रण</span><span class="rbig" id="dr_tot"></span></div>
+          </div>
+        </div>
+      </div>
+      <div id="milk_increase" style="display:none">
+        <div class="card">
+          <div class="ctitle" id="ct_increase">⬆️ Fat बढ़ाएं</div>
+          <p style="font-size:.74rem;color:var(--tx3);margin-bottom:10px" id="desc_increase">High Fat दूध मिलाकर Fat% बढ़ाएं</p>
+          <div class="fr">
+            <div class="fg"><label class="fl" id="lbl_incmilk">🥛 दूध (L)</label><input type="number" class="fc" id="inc_milk" placeholder="10" step="0.1" min="0"></div>
+            <div class="fg"><label class="fl" id="lbl_inccur">मौजूदा Fat %</label><input type="number" class="fc" id="inc_cur" placeholder="4.0" step="0.1" min="0" max="15"></div>
+          </div>
+          <div class="fr">
+            <div class="fg"><label class="fl" id="lbl_inctgt">🎯 Target Fat %</label><input type="number" class="fc" id="inc_tgt" placeholder="6.0" step="0.1" min="0" max="15"></div>
+            <div class="fg"><label class="fl" id="lbl_inchf">🔥 High Fat %</label><input type="number" class="fc" id="inc_hf" placeholder="8.0" step="0.1" min="0" max="20"></div>
+          </div>
+          <div class="eb" id="inc_err"></div>
+          <button class="btn btn-p" onclick="calcIncrease()" id="btn_inccalc">🔢 Calculate करें</button>
+          <div class="rb" id="inc_rb">
+            <div class="rr"><span class="rl" id="rl_incsrc">मूल दूध</span><span class="rv" id="ir_src"></span></div>
+            <div class="rr"><span class="rl" id="rl_incadd">High Fat दूध मिलाएं</span><span class="rv" id="ir_add"></span></div>
+            <div class="rr"><span class="rl" id="rl_inctot">कुल मिश्रण</span><span class="rbig" id="ir_tot"></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAYMENT CALC -->
+    <div id="tool_pay" style="display:none">
+      <div class="card">
+        <div class="ctitle" id="ct_paycalc">💰 Payment Calculator</div>
+        <p style="font-size:.74rem;color:var(--tx3);margin-bottom:10px">Amount = Fat% × Milk(L) × Rate</p>
+        <div class="fr">
+          <div class="fg"><label class="fl" id="lbl_paymilk">🥛 दूध (L)</label><input type="number" class="fc" id="pay_milk" placeholder="10" step="0.1" oninput="calcPay()"></div>
+          <div class="fg"><label class="fl">💧 Fat %</label><input type="number" class="fc" id="pay_fat" placeholder="6.5" step="0.1" oninput="calcPay()"></div>
+        </div>
+        <div class="fg"><label class="fl" id="lbl_payrate">💵 Rate per Fat (₹)</label><input type="number" class="fc" id="pay_rate" step="0.1" oninput="calcPay()"></div>
+        <div class="rb" id="pay_rb">
+          <div class="rr"><span class="rl">Fat × Litres</span><span class="rv" id="pr_units">0 units</span></div>
+          <div class="rr"><span class="rl" id="rl_payrate">Rate</span><span class="rv" id="pr_rate">₹0</span></div>
+          <div class="rr"><span class="rl" id="rl_payamt">💰 कुल Amount</span><span class="rbig" id="pr_amt">₹0</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MIX CALC -->
+    <div id="tool_mix" style="display:none">
+      <div class="card">
+        <div class="ctitle" id="ct_mix">🔀 दो दूध मिलाना</div>
+        <p style="font-size:.74rem;color:var(--tx3);margin-bottom:10px" id="desc_mix">दो अलग Fat% के दूध मिलाकर मिश्रण Fat% जानें</p>
+        <div class="fr">
+          <div class="fg"><label class="fl">🥛 दूध A (L)</label><input type="number" class="fc" id="mx_aq" placeholder="10" step="0.1" min="0"></div>
+          <div class="fg"><label class="fl">Fat A %</label><input type="number" class="fc" id="mx_af" placeholder="8" step="0.1" min="0"></div>
+        </div>
+        <div class="fr">
+          <div class="fg"><label class="fl">🥛 दूध B (L)</label><input type="number" class="fc" id="mx_bq" placeholder="5" step="0.1" min="0"></div>
+          <div class="fg"><label class="fl">Fat B %</label><input type="number" class="fc" id="mx_bf" placeholder="5" step="0.1" min="0"></div>
+        </div>
+        <button class="btn btn-p" onclick="calcMix()" id="btn_mixcalc">🔢 Calculate करें</button>
+        <div class="rb" id="mix_rb">
+          <div class="rr"><span class="rl">दूध A</span><span class="rv" id="mx_a"></span></div>
+          <div class="rr"><span class="rl">दूध B</span><span class="rv" id="mx_b"></span></div>
+          <div class="rr"><span class="rl" id="rl_mixfat">मिश्रण Fat</span><span class="rbig" id="mx_fat">0%</span></div>
+          <div class="rr"><span class="rl" id="rl_mixtot">कुल</span><span class="rv" id="mx_tot">0 L</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BASIC CALCULATOR -->
+    <div id="tool_calc" style="display:none">
+      <div class="card">
+        <div class="ctitle" id="ct_calc">🔢 सामान्य Calculator</div>
+        <div class="cdsp"><div class="cexpr" id="c_expr"></div><div class="cval" id="c_val">0</div></div>
+        <div class="cgrid">
+          <button class="ck cc" onclick="ck('C')" id="ck_ac">AC</button>
+          <button class="ck cd" onclick="ck('DEL')">⌫</button>
+          <button class="ck co" onclick="ck('%')">%</button>
+          <button class="ck co" onclick="ck('÷')">÷</button>
+          <button class="ck cn" onclick="ck('7')">7</button><button class="ck cn" onclick="ck('8')">8</button><button class="ck cn" onclick="ck('9')">9</button>
+          <button class="ck co" onclick="ck('×')">×</button>
+          <button class="ck cn" onclick="ck('4')">4</button><button class="ck cn" onclick="ck('5')">5</button><button class="ck cn" onclick="ck('6')">6</button>
+          <button class="ck co" onclick="ck('−')">−</button>
+          <button class="ck cn" onclick="ck('1')">1</button><button class="ck cn" onclick="ck('2')">2</button><button class="ck cn" onclick="ck('3')">3</button>
+          <button class="ck co" onclick="ck('+')">+</button>
+          <button class="ck cn cz" onclick="ck('0')">0</button>
+          <button class="ck cn" onclick="ck('.')">.</button>
+          <button class="ck ce" onclick="ck('=')">=</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SETTINGS ═══ -->
+<div class="pg" id="pg_settings">
+  <div class="ptitle" id="pt_settings">⚙️ Settings</div>
+  <div class="wrap">
+    <div class="card">
+      <div class="ctitle" id="ct_ratesett">💰 Rate Settings</div>
+      <div class="fg"><label class="fl" id="lbl_rateset">Rate per Fat Unit (₹)</label><input type="number" class="fc" id="sett_rate" step="0.1" oninput="saveRate(this.value)"></div>
+      <div style="font-size:.72rem;color:var(--tx3)" id="rate_formula">Formula: Amount = Fat% × Litres × Rate</div>
+    </div>
+    <div class="card">
+      <div class="ctitle" id="ct_autodel">🗑️ Auto Delete</div>
+      <div class="fg"><label class="fl" id="lbl_autodel">पुराना Data हटाएं</label>
+        <select class="fc" id="sett_autodel" onchange="saveAutoDelete(this.value)">
+          <option value="never" id="ado_never">कभी नहीं / Never</option>
+          <option value="7" id="ado_7">7 दिन / 7 Days</option>
+          <option value="15" id="ado_15">15 दिन / 15 Days</option>
+          <option value="30" id="ado_30">30 दिन / 30 Days</option>
+        </select>
+      </div>
+      <div style="font-size:.7rem;color:var(--tx3)" id="autodel_note">App खुलने पर पुरानी entries delete होंगी</div>
+    </div>
+    <div class="card">
+      <div class="ctitle" id="ct_pinsett">🔒 PIN Security</div>
+      <div class="si">
+        <div><div class="slb" id="sett_pinlbl">PIN Lock</div><div class="ssub" id="sett_pinsub">App खोलने पर PIN मांगें</div></div>
+        <button class="tgl" id="pin_tgl" onclick="togglePinSetting()"></button>
+      </div>
+      <div id="pin_area" style="margin-top:10px;display:none">
+        <div class="fg"><label class="fl" id="lbl_setpin">4-अंकीय PIN सेट करें</label><input type="number" class="fc" id="pin_input" placeholder="1234" maxlength="4"></div>
+        <button class="btn btn-p" onclick="savePin()" id="btn_savepin">💾 PIN सेव करें</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ctitle">🌗 Appearance</div>
+      <div class="si">
+        <div><div class="slb">Dark Mode</div><div class="ssub" id="dark_sub">रात के लिए गहरा थीम</div></div>
+        <button class="tgl" id="dark_tgl" onclick="toggleTheme()"></button>
+      </div>
+      <div class="si">
+        <div><div class="slb" id="lang_lbl">Language / भाषा</div><div class="ssub">English / हिंदी</div></div>
+        <button class="btn btn-sm btn-o" onclick="toggleLang()" id="lang_sett_btn">EN</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ctitle" id="ct_datamgmt">📦 Data Management</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-o" onclick="exportCSV()" id="btn_export">📤 CSV Export</button>
+        <button class="btn btn-o" onclick="backupData()" id="btn_backup">💾 Backup (JSON)</button>
+        <button class="btn btn-o" onclick="document.getElementById('restore_input').click()" id="btn_restore">📥 Restore Backup</button>
+        <button class="btn btn-d" onclick="confirmClear()" style="height:44px" id="btn_clearall">🗑️ सारा Data हटाएं</button>
+      </div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:1.8rem;margin-bottom:5px">🐄</div>
+      <div style="font-weight:700;font-size:1rem;color:var(--pri)">Dudh Register v2.0</div>
+      <div style="font-size:.7rem;color:var(--tx3);margin-top:3px" id="app_desc">दूध डेयरी प्रबंधन प्रणाली</div>
+      <div style="font-size:.66rem;color:var(--tx3);margin-top:5px">Made with ❤️ for Indian Dairy Farmers</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="moverlay" id="modal_farmer">
+  <div class="modal">
+    <div class="mttl"><span id="modal_farm_title">👨‍🌾 किसान जोड़ें</span><button class="mcls" onclick="closeModal('modal_farmer')">✕</button></div>
+    <div class="fg"><label class="fl" id="lbl_fname">👤 नाम *</label><input type="text" class="fc" id="fm_name" placeholder="किसान का नाम"></div>
+    <div class="fg"><label class="fl" id="lbl_fphone">📱 मोबाइल</label><input type="tel" class="fc" id="fm_phone" placeholder="मोबाइल नंबर"></div>
+    <div class="fg"><label class="fl" id="lbl_fid">🪪 ID / Code</label><input type="text" class="fc" id="fm_id" placeholder="F001"></div>
+    <input type="hidden" id="fm_idx" value="">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
+      <button class="btn btn-o" onclick="closeModal('modal_farmer')" id="btn_cancel">रद्द करें</button>
+      <button class="btn btn-p" onclick="saveFarmer()" id="btn_savefarm">💾 सेव करें</button>
+    </div>
+  </div>
+</div>
+
+<div class="moverlay" id="modal_rate">
+  <div class="modal">
+    <div class="mttl"><span id="modal_rate_title">💵 Rate बदलें</span><button class="mcls" onclick="closeModal('modal_rate')">✕</button></div>
+    <div class="fg"><label class="fl" id="lbl_rateinp">Rate per Fat Unit (₹)</label><input type="number" class="fc" id="rate_inp" step="0.1" placeholder="9.5"></div>
+    <div style="font-size:.74rem;color:var(--tx3);margin-bottom:11px" id="rate_eg">उदाहरण: Fat 6.5% × 10L × ₹9.5 = ₹617.50</div>
+    <button class="btn btn-p" onclick="confirmRate()" id="btn_okrate">✅ ठीक है</button>
+  </div>
+</div>
+
+<div class="moverlay" id="modal_bill">
+  <div class="modal">
+    <div class="mttl"><span id="modal_bill_title">🧾 Bill बनाएं</span><button class="mcls" onclick="closeModal('modal_bill')">✕</button></div>
+    <div class="fg"><label class="fl" id="lbl_billfarm">👨‍🌾 किसान चुनें</label><select class="fc" id="bill_farmer"></select></div>
+    <div class="fr">
+      <div class="fg"><label class="fl" id="lbl_billfrom">📅 शुरू</label><input type="date" class="fc" id="bill_from"></div>
+      <div class="fg"><label class="fl" id="lbl_billto">📅 तक</label><input type="date" class="fc" id="bill_to"></div>
+    </div>
+    <button class="btn btn-p" onclick="generateBill()" style="margin-bottom:8px" id="btn_genbill">🖨️ PDF बनाएं</button>
+    <button class="btn btn-wa" onclick="shareBillWA()" id="btn_billwa">💬 WhatsApp Share</button>
+  </div>
+</div>
+
+<div class="moverlay" id="modal_receipt">
+  <div class="modal">
+    <div class="mttl"><span id="modal_rcp_title">🧾 Receipt</span><button class="mcls" onclick="closeModal('modal_receipt')">✕</button></div>
+    <div id="rcp_content"></div>
+    <div style="display:flex;flex-direction:column;gap:7px;margin-top:11px">
+      <div style="display:flex;gap:7px"><button class="btn btn-p" style="flex:1" onclick="printRcp()" id="btn_rcpprint">🖨️ Print</button><button class="btn btn-o" style="width:54px;height:50px;flex:none;padding:0" onclick="openPrinter()" aria-label="Printer settings">⚙️</button></div>
+      <button class="btn btn-p" onclick="downloadRcpPDF()" id="btn_dlpdf">📥 PDF Download</button>
+      <button class="btn btn-wa" onclick="shareRcpWA()" id="btn_rcpwa">💬 WhatsApp Share</button>
+      <button class="btn btn-o" onclick="shareRcpNative()" id="btn_rcpshare">📤 Share</button>
+    </div>
+  </div>
+</div>
+
+<div class="moverlay" id="modal_printer">
+  <div class="modal">
+    <div class="mttl"><span id="modal_prn_title">🖨️ Printer चुनें</span><button class="mcls" onclick="closeModal('modal_printer')">✕</button></div>
+    <div class="fg"><label class="fl" id="lbl_prnpaper">📏 Paper Size</label>
+      <select class="fc" id="prn_paper" onchange="DB.set('prnW',parseInt(this.value))"><option value="58">58 mm (2 inch)</option><option value="80">80 mm (3 inch)</option></select></div>
+    <div style="display:flex;flex-direction:column;gap:5px">
+      <button class="btn btn-o" id="prn_bt" onclick="pickPrinter('bt')">🔵 Bluetooth Printer</button>
+      <div class="prn-h" id="prn_bt_h"></div>
+      <button class="btn btn-o" id="prn_usb" onclick="pickPrinter('usb')">🔌 USB Printer</button>
+      <div class="prn-h" id="prn_usb_h"></div>
+      <button class="btn btn-o" id="prn_rawbt" onclick="pickPrinter('rawbt')">📲 RawBT App</button>
+      <div class="prn-h" id="prn_rawbt_h"></div>
+      <button class="btn btn-o" id="prn_sys" onclick="pickPrinter('sys')">🖨️ Normal Print</button>
+      <div class="prn-h" id="prn_sys_h"></div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="restore_input" accept=".json" style="display:none" onchange="doRestore(event)">
+<div class="toast" id="toast_el"></div>
+
+<script>
+'use strict';
+/* ── TRANSLATIONS ─────────────────────── */
+const TX={
+  hi:{
+    h_sub:'दूध डेयरी प्रबंधन',nl_home:'होम',nl_entry:'Entry',nl_farmers:'किसान',nl_reports:'Report',nl_tools:'Tools',
+    pt_home:'🏠 आज का सारांश',sl_milk:'आज का दूध',sl_pay:'आज का भुगतान',sl_farm:'किसान',sl_fat:'औसत Fat',
+    ct_today:'📋 आज की Entries',ct_quick:'⚡ Quick Actions',qa_entry:'➕ दूध Entry',qa_report:'📊 Report',qa_addfarm:'👨‍🌾 किसान जोड़ें',qa_csv:'📤 CSV',
+    pt_entry:'🥛 दूध Entry',ct_newentry:'📝 नई Entry',lbl_selfarmer:'👨‍🌾 किसान चुनें',lbl_emilk:'🥛 दूध (L)',lbl_rateper:'Rate per Fat Unit',
+    btn_chrate:'✏️ बदलें',er_lmilk:'🥛 दूध',er_lrate:'💵 Rate',er_lamount:'💰 कुल Amount',btn_saveentry:'💾 Entry सेव करें',
+    st_recent:'📋 हाल की Entries',btn_viewall:'सभी देखें',
+    pt_farmers:'👨‍🌾 किसान',btn_addfarm:'➕ नया किसान जोड़ें',
+    rt_today:'आज',rt_week:'सप्ताह',rt_month:'माह',rt_all:'सभी',lbl_filterfarm:'👨‍🌾 किसान फिल्टर',
+    rsl_milk:'कुल दूध',rsl_fat:'औसत Fat',rsl_pay:'कुल भुगतान',btn_rcsv:'📤 CSV',btn_rbill:'🧾 Bill PDF',
+    pt_tools:'🧮 Tools',tt_milk:'🥛 Milk Ops',tt_pay:'💰 Payment',tt_mix:'🔀 Mix',tt_calc:'🔢 Calculator',
+    ct_calc:'🔢 सामान्य Calculator',ck_ac:'AC',mt_red:'💧 Fat घटाएं',mt_inc:'⬆️ Fat बढ़ाएं',
+    ct_reduce:'💧 Fat कम करें',desc_reduce:'पानी या कम Fat दूध मिलाकर Fat% कम करें',
+    lbl_dilmilk:'🥛 दूध (L)',lbl_dilcur:'मौजूदा Fat %',lbl_diltgt:'🎯 Target Fat %',lbl_diltype:'मिलाएं',
+    opt_water:'💧 पानी',opt_lowfat:'🥛 कम Fat दूध',lbl_lfpct:'Low-fat दूध का Fat %',btn_dilcalc:'🔢 Calculate करें',
+    rl_dilsrc:'मूल दूध',rl_diladd:'मिलाएं',rl_diltot:'कुल मिश्रण',
+    ct_increase:'⬆️ Fat बढ़ाएं',desc_increase:'High Fat दूध मिलाकर Fat% बढ़ाएं',
+    lbl_incmilk:'🥛 दूध (L)',lbl_inccur:'मौजूदा Fat %',lbl_inctgt:'🎯 Target Fat %',lbl_inchf:'🔥 High Fat %',
+    btn_inccalc:'🔢 Calculate करें',rl_incsrc:'मूल दूध',rl_incadd:'High Fat दूध मिलाएं',rl_inctot:'कुल मिश्रण',
+    ct_paycalc:'💰 Payment Calculator',lbl_paymilk:'🥛 दूध (L)',lbl_payrate:'💵 Rate per Fat (₹)',rl_payrate:'Rate',rl_payamt:'💰 कुल Amount',
+    ct_mix:'🔀 दो दूध मिलाना',desc_mix:'दो अलग Fat% के दूध मिलाकर मिश्रण Fat% जानें',rl_mixfat:'मिश्रण Fat',rl_mixtot:'कुल',btn_mixcalc:'🔢 Calculate करें',
+    pt_settings:'⚙️ Settings',ct_ratesett:'💰 Rate Settings',lbl_rateset:'Rate per Fat Unit (₹)',rate_formula:'Formula: Amount = Fat% × Litres × Rate',
+    ct_autodel:'🗑️ Auto Delete',lbl_autodel:'पुराना Data हटाएं',ado_never:'कभी नहीं / Never',ado_7:'7 दिन',ado_15:'15 दिन',ado_30:'30 दिन',autodel_note:'App खुलने पर पुरानी entries delete होंगी',
+    ct_pinsett:'🔒 PIN Security',sett_pinlbl:'PIN Lock',sett_pinsub:'App खोलने पर PIN मांगें',lbl_setpin:'4-अंकीय PIN',btn_savepin:'💾 PIN सेव करें',
+    dark_sub:'रात के लिए गहरा थीम',lang_lbl:'Language / भाषा',
+    ct_datamgmt:'📦 Data Management',btn_export:'📤 CSV Export',btn_backup:'💾 Backup (JSON)',btn_restore:'📥 Restore',btn_clearall:'🗑️ सारा Data हटाएं',
+    app_desc:'दूध डेयरी प्रबंधन प्रणाली',
+    lbl_fname:'👤 नाम *',lbl_fphone:'📱 मोबाइल',lbl_fid:'🪪 ID / Code',btn_cancel:'रद्द करें',btn_savefarm:'💾 सेव करें',
+    modal_farm_title_add:'👨‍🌾 किसान जोड़ें',modal_farm_title_edit:'✏️ किसान Edit करें',
+    modal_rate_title:'💵 Rate बदलें',lbl_rateinp:'Rate per Fat Unit (₹)',rate_eg:'उदाहरण: Fat 6.5% × 10L × ₹9.5 = ₹617.50',btn_okrate:'✅ ठीक है',
+    modal_bill_title:'🧾 Bill बनाएं',lbl_billfarm:'👨‍🌾 किसान चुनें',lbl_billfrom:'📅 शुरू',lbl_billto:'📅 तक',btn_genbill:'🖨️ PDF बनाएं',btn_billwa:'💬 WhatsApp Share',
+    modal_rcp_title:'🧾 रसीद',btn_dlpdf:'📥 PDF Download',btn_rcpwa:'💬 WhatsApp',btn_rcpshare:'📤 Share',
+    btn_rcpprint:'🖨️ Print',modal_prn_title:'🖨️ Printer चुनें',lbl_prnpaper:'📏 Paper Size',
+    prn_bt:'🔵 Bluetooth Printer',prn_bt_h:'Bluetooth (BLE) thermal printer / billing machine से सीधा print (Chrome Android / Windows / Mac)',
+    prn_usb:'🔌 USB Printer',prn_usb_h:'USB / OTG cable से जुड़ा thermal printer',
+    prn_rawbt:'📲 RawBT App',prn_rawbt_h:'पुराने Bluetooth (Classic) printer के लिए: पहले RawBT app install करके printer जोड़ें',
+    prn_sys:'🖨️ Normal Print',prn_sys_h:'फ़ोन / कंप्यूटर का print dialog (WiFi, USB या Windows printer)',
+    prn_wait:'🖨️ Print भेज रहे हैं…',ok_print:'✅ Print भेज दिया',err_print:'❌ Print नहीं हुआ',
+    prn_nobt:'❌ इस browser में Bluetooth नहीं चलता (Chrome use करें)',prn_nousb:'❌ इस browser में USB नहीं चलता (Chrome use करें)',
+    prn_nochar:'Printer में print channel नहीं मिला, दूसरा option try करें',prn_noep:'USB printer का port नहीं मिला',
+    ps_sub:'PIN दर्ज करें',ps_skip:'पिन के बिना खोलें',
+    w_milk:'दूध',w_amount:'राशि',lbl_allfarmers:'सभी किसान',lbl_selfarmopt:'-- किसान चुनें --',
+    rcp_farmer:'किसान',rcp_milk:'दूध',rcp_total:'कुल राशि',rcp_date:'तारीख',
+    empty_farmers:'कोई किसान नहीं\nकिसान जोड़ें',empty_entries:'कोई entry नहीं',empty_reports:'इस अवधि में कोई entry नहीं',
+    err_selfarm:'❌ किसान चुनें',err_milk:'❌ दूध की मात्रा डालें',err_fat:'❌ Fat % डालें',err_name:'❌ नाम आवश्यक है',
+    ok_farmer:'✅ किसान सेव हो गया',del_farmer:'🗑️ किसान हटाया गया',ok_entry:'✅ Entry सेव हो गई! ₹',ok_rate:'✅ Rate: ₹',ok_pin:'✅ PIN सेट हो गया',
+    err_pin4:'4 अंक का PIN डालें',err_pin:'❌ गलत PIN',ok_autodel:'✅ Auto Delete सेट हो गया',
+    ok_csv:'✅ CSV Export हो गई',ok_backup:'✅ Backup downloaded',ok_restore:'✅ Restore हो गया!',err_backup:'❌ Invalid file',ok_clear:'🗑️ Data delete हो गया',ok_pdf:'✅ PDF downloaded',ok_copy:'✅ Copy हो गया',
+    err_nofarm:'❌ किसान चुनें',err_nodate:'❌ तारीख भरें',err_noentry:'❌ कोई entry नहीं',ok_bill:'✅ Bill PDF downloaded',err_allvals:'❌ सभी values भरें',
+    err_dil_dir:'Fat घटाने के लिए: Target < मौजूदा Fat%',err_inc_dir:'Fat बढ़ाने के लिए: Target > मौजूदा Fat%',
+    err_milkqty:'दूध की मात्रा डालें',err_curfat:'मौजूदा Fat% डालें',err_tgtfat:'Target Fat% डालें',
+    err_lfpct:'Low-fat दूध का Fat% डालें',err_lfdir:'Low-fat Fat% < Target Fat% होना चाहिए',
+    err_hfpct:'High Fat% डालें',err_hfdir:'High Fat% > Target Fat% होना चाहिए',
+    del_confirm:'इस किसान को हटाएं?',clear_confirm1:'⚠️ सारा data delete होगा!',clear_confirm2:'Last chance! Sure हैं?',
+    water_lbl:'पानी',lowfat_lbl:'कम Fat दूध',
+  },
+  en:{
+    h_sub:'Milk Dairy Management',nl_home:'Home',nl_entry:'Entry',nl_farmers:'Farmers',nl_reports:'Reports',nl_tools:'Tools',
+    pt_home:'🏠 Today\'s Summary',sl_milk:'Today\'s Milk',sl_pay:'Today\'s Payment',sl_farm:'Farmers',sl_fat:'Avg Fat',
+    ct_today:'📋 Today\'s Entries',ct_quick:'⚡ Quick Actions',qa_entry:'➕ Milk Entry',qa_report:'📊 Reports',qa_addfarm:'👨‍🌾 Add Farmer',qa_csv:'📤 CSV',
+    pt_entry:'🥛 Milk Entry',ct_newentry:'📝 New Entry',lbl_selfarmer:'👨‍🌾 Select Farmer',lbl_emilk:'🥛 Milk (L)',lbl_rateper:'Rate per Fat Unit',
+    btn_chrate:'✏️ Change',er_lmilk:'🥛 Milk',er_lrate:'💵 Rate',er_lamount:'💰 Total Amount',btn_saveentry:'💾 Save Entry',
+    st_recent:'📋 Recent Entries',btn_viewall:'View All',
+    pt_farmers:'👨‍🌾 Farmers',btn_addfarm:'➕ Add New Farmer',
+    rt_today:'Today',rt_week:'Week',rt_month:'Month',rt_all:'All',lbl_filterfarm:'👨‍🌾 Filter by Farmer',
+    rsl_milk:'Total Milk',rsl_fat:'Avg Fat',rsl_pay:'Total Payment',btn_rcsv:'📤 CSV',btn_rbill:'🧾 Bill PDF',
+    pt_tools:'🧮 Tools',tt_milk:'🥛 Milk Ops',tt_pay:'💰 Payment',tt_mix:'🔀 Mix',tt_calc:'🔢 Calculator',
+    ct_calc:'🔢 Basic Calculator',ck_ac:'AC',mt_red:'💧 Reduce Fat',mt_inc:'⬆️ Increase Fat',
+    ct_reduce:'💧 Reduce Fat (Dilution)',desc_reduce:'Add water or low-fat milk to reduce Fat%',
+    lbl_dilmilk:'🥛 Milk (L)',lbl_dilcur:'Current Fat %',lbl_diltgt:'🎯 Target Fat %',lbl_diltype:'Add',
+    opt_water:'💧 Water',opt_lowfat:'🥛 Low-fat Milk',lbl_lfpct:'Low-fat Milk Fat %',btn_dilcalc:'🔢 Calculate',
+    rl_dilsrc:'Original Milk',rl_diladd:'Add',rl_diltot:'Total Mix',
+    ct_increase:'⬆️ Increase Fat',desc_increase:'Add high-fat milk to increase Fat%',
+    lbl_incmilk:'🥛 Milk (L)',lbl_inccur:'Current Fat %',lbl_inctgt:'🎯 Target Fat %',lbl_inchf:'🔥 High Fat %',
+    btn_inccalc:'🔢 Calculate',rl_incsrc:'Original Milk',rl_incadd:'Add High-fat Milk',rl_inctot:'Total Mix',
+    ct_paycalc:'💰 Payment Calculator',lbl_paymilk:'🥛 Milk (L)',lbl_payrate:'💵 Rate per Fat (₹)',rl_payrate:'Rate',rl_payamt:'💰 Total Amount',
+    ct_mix:'🔀 Mix Two Milks',desc_mix:'Mix two milks to find resultant Fat%',rl_mixfat:'Mixed Fat',rl_mixtot:'Total',btn_mixcalc:'🔢 Calculate',
+    pt_settings:'⚙️ Settings',ct_ratesett:'💰 Rate Settings',lbl_rateset:'Rate per Fat Unit (₹)',rate_formula:'Formula: Amount = Fat% × Litres × Rate',
+    ct_autodel:'🗑️ Auto Delete',lbl_autodel:'Delete Old Data',ado_never:'Never',ado_7:'7 Days',ado_15:'15 Days',ado_30:'30 Days',autodel_note:'Old entries will auto-delete on app start',
+    ct_pinsett:'🔒 PIN Security',sett_pinlbl:'PIN Lock',sett_pinsub:'Ask PIN when opening app',lbl_setpin:'Set 4-digit PIN',btn_savepin:'💾 Save PIN',
+    dark_sub:'Dark theme for night',lang_lbl:'Language / भाषा',
+    ct_datamgmt:'📦 Data Management',btn_export:'📤 CSV Export',btn_backup:'💾 Backup (JSON)',btn_restore:'📥 Restore',btn_clearall:'🗑️ Delete All Data',
+    app_desc:'Milk Dairy Management System',
+    lbl_fname:'👤 Name *',lbl_fphone:'📱 Mobile',lbl_fid:'🪪 ID / Code',btn_cancel:'Cancel',btn_savefarm:'💾 Save',
+    modal_farm_title_add:'👨‍🌾 Add Farmer',modal_farm_title_edit:'✏️ Edit Farmer',
+    modal_rate_title:'💵 Change Rate',lbl_rateinp:'Rate per Fat Unit (₹)',rate_eg:'Example: Fat 6.5% × 10L × ₹9.5 = ₹617.50',btn_okrate:'✅ OK',
+    modal_bill_title:'🧾 Generate Bill',lbl_billfarm:'👨‍🌾 Select Farmer',lbl_billfrom:'📅 From',lbl_billto:'📅 To',btn_genbill:'🖨️ Generate PDF',btn_billwa:'💬 WhatsApp Share',
+    modal_rcp_title:'🧾 Receipt',btn_dlpdf:'📥 Download PDF',btn_rcpwa:'💬 WhatsApp',btn_rcpshare:'📤 Share',
+    btn_rcpprint:'🖨️ Print',modal_prn_title:'🖨️ Choose Printer',lbl_prnpaper:'📏 Paper Size',
+    prn_bt:'🔵 Bluetooth Printer',prn_bt_h:'Print directly to a Bluetooth (BLE) thermal printer / billing machine (Chrome on Android / Windows / Mac)',
+    prn_usb:'🔌 USB Printer',prn_usb_h:'Thermal printer connected with USB / OTG cable',
+    prn_rawbt:'📲 RawBT App',prn_rawbt_h:'For older Bluetooth (Classic) printers: install RawBT app and pair your printer first',
+    prn_sys:'🖨️ Normal Print',prn_sys_h:'Phone / computer print dialog (WiFi, USB or Windows printer)',
+    prn_wait:'🖨️ Sending to printer…',ok_print:'✅ Sent to printer',err_print:'❌ Print failed',
+    prn_nobt:'❌ Bluetooth is not supported in this browser (use Chrome)',prn_nousb:'❌ USB is not supported in this browser (use Chrome)',
+    prn_nochar:'No print channel found on printer, try another option',prn_noep:'USB printer port not found',
+    ps_sub:'Enter PIN',ps_skip:'Open without PIN',
+    w_milk:'Milk',w_amount:'Amount',lbl_allfarmers:'All Farmers',lbl_selfarmopt:'-- Select Farmer --',
+    rcp_farmer:'FARMER',rcp_milk:'MILK',rcp_total:'TOTAL AMOUNT',rcp_date:'DATE',
+    empty_farmers:'No farmers added\nTap button above to add',empty_entries:'No entries yet',empty_reports:'No entries in this period',
+    err_selfarm:'❌ Select Farmer',err_milk:'❌ Enter milk quantity',err_fat:'❌ Enter Fat %',err_name:'❌ Name is required',
+    ok_farmer:'✅ Farmer saved',del_farmer:'🗑️ Farmer deleted',ok_entry:'✅ Entry saved! ₹',ok_rate:'✅ Rate: ₹',ok_pin:'✅ PIN set',
+    err_pin4:'Enter 4-digit PIN',err_pin:'❌ Wrong PIN',ok_autodel:'✅ Auto Delete updated',
+    ok_csv:'✅ CSV exported',ok_backup:'✅ Backup downloaded',ok_restore:'✅ Data restored!',err_backup:'❌ Invalid file',ok_clear:'🗑️ All data deleted',ok_pdf:'✅ PDF downloaded',ok_copy:'✅ Copied',
+    err_nofarm:'❌ Select Farmer',err_nodate:'❌ Fill date range',err_noentry:'❌ No entries found',ok_bill:'✅ Bill PDF downloaded',err_allvals:'❌ Fill all values',
+    err_dil_dir:'To reduce fat: Target Fat% must be less than Current Fat%',err_inc_dir:'To increase fat: Target Fat% must be greater than Current Fat%',
+    err_milkqty:'Enter milk quantity',err_curfat:'Enter current Fat%',err_tgtfat:'Enter target Fat%',
+    err_lfpct:'Enter low-fat milk Fat%',err_lfdir:'Low-fat Fat% must be less than Target Fat%',
+    err_hfpct:'Enter high-fat milk Fat%',err_hfdir:'High Fat% must be greater than Target Fat%',
+    del_confirm:'Delete this farmer?',clear_confirm1:'⚠️ All data will be deleted!',clear_confirm2:'Last chance! Are you sure?',
+    water_lbl:'Water',lowfat_lbl:'Low-fat Milk',
+  }
+};
+let L='hi';
+function T(k){return(TX[L]&&TX[L][k])||TX.hi[k]||k;}
+function applyLang(){
+  document.documentElement.lang=L;
+  Object.keys(TX[L]).forEach(k=>{const el=document.getElementById(k);if(el)el.textContent=TX[L][k];});
+  document.getElementById('langBtn').textContent=L==='hi'?'EN':'हि';
+  const b=document.getElementById('lang_sett_btn');if(b)b.textContent=L==='hi'?'EN':'हि';
+}
+function toggleLang(){L=L==='hi'?'en':'hi';DB.set('lang',L);applyLang();refreshAll();}
+
+/* ── DB ─────────────────────────────────── */
+const DB={
+  _g:k=>{try{return JSON.parse(localStorage.getItem('db_'+k)||'null');}catch{return null;}},
+  _s:(k,v)=>localStorage.setItem('db_'+k,JSON.stringify(v)),
+  farmers:()=>DB._g('farmers')||[],
+  entries:()=>DB._g('entries')||[],
+  rate:()=>parseFloat(DB._g('rate'))||9.5,
+  pin:()=>DB._g('pin')||null,
+  pinOn:()=>DB._g('pinOn')||false,
+  theme:()=>DB._g('theme')||'light',
+  autoDelete:()=>DB._g('autoDelete')||'never',
+  lang:()=>DB._g('lang')||'hi',
+  set:(k,v)=>DB._s(k,v),
+};
+
+function runAutoDelete(){
+  const d=DB.autoDelete();if(d==='never')return;
+  const cut=Date.now()-parseInt(d)*86400000;
+  DB.set('entries',DB.entries().filter(e=>new Date(e.date).getTime()>=cut));
+}
+
+/* ── INIT ───────────────────────────────── */
+window.addEventListener('load',()=>{
+  runAutoDelete();
+  if(DB.theme()==='dark'){document.documentElement.setAttribute('data-dark','');document.getElementById('dark_tgl').classList.add('on');document.getElementById('themeBtn').textContent='☀️';}
+  L=DB.lang();applyLang();
+  if(DB.pinOn()&&DB.pin()){document.getElementById('pinScreen').classList.add('on');document.getElementById('pin_tgl').classList.add('on');document.getElementById('pin_area').style.display='block';}
+  const r=DB.rate();
+  document.getElementById('sett_rate').value=r;
+  document.getElementById('pay_rate').value=r;
+  document.getElementById('ef_rateshow').textContent=r.toFixed(2);
+  document.getElementById('sett_autodel').value=DB.autoDelete();
+  document.querySelectorAll('.moverlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('on');}));
+  refreshAll();
+});
+
+/* ── NAV ────────────────────────────────── */
+function go(page){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  const pg=document.getElementById('pg_'+page);if(pg)pg.classList.add('on');
+  const nv=document.getElementById('nav_'+page);if(nv)nv.classList.add('on');
+  if(page==='home')renderDashboard();
+  if(page==='entry'){fillFarmerSelects();renderRecentEntries();}
+  if(page==='farmers')renderFarmerList();
+  if(page==='reports'){fillFarmerSelects();renderReports();}
+  if(page==='tools')document.getElementById('pay_rate').value=DB.rate();
+  if(page==='settings'){document.getElementById('sett_rate').value=DB.rate();document.getElementById('sett_autodel').value=DB.autoDelete();}
+  window.scrollTo(0,0);
+}
+
+/* ── THEME ──────────────────────────────── */
+function toggleTheme(){
+  const d=document.documentElement.hasAttribute('data-dark');
+  if(d){document.documentElement.removeAttribute('data-dark');DB.set('theme','light');document.getElementById('dark_tgl').classList.remove('on');document.getElementById('themeBtn').textContent='🌙';}
+  else{document.documentElement.setAttribute('data-dark','');DB.set('theme','dark');document.getElementById('dark_tgl').classList.add('on');document.getElementById('themeBtn').textContent='☀️';}
+}
+
+/* ── PIN ────────────────────────────────── */
+let pBuf='';
+function pIn(d){if(pBuf.length>=4)return;pBuf+=d;upDots();if(pBuf.length===4)chkPin();}
+function pDel(){pBuf=pBuf.slice(0,-1);upDots();}
+function upDots(){for(let i=0;i<4;i++)document.getElementById('d'+i).classList.toggle('on',i<pBuf.length);}
+function chkPin(){
+  if(pBuf===DB.pin()){document.getElementById('pinScreen').classList.remove('on');pBuf='';upDots();}
+  else{document.getElementById('perr').textContent=T('err_pin');setTimeout(()=>{pBuf='';upDots();document.getElementById('perr').textContent='';},900);}
+}
+function pSkip(){document.getElementById('pinScreen').classList.remove('on');}
+function togglePinSetting(){const t=document.getElementById('pin_tgl');t.classList.toggle('on');const on=t.classList.contains('on');DB.set('pinOn',on);document.getElementById('pin_area').style.display=on?'block':'none';if(!on)DB.set('pin',null);}
+function savePin(){const v=document.getElementById('pin_input').value;if(v.length!==4||isNaN(v)){toast(T('err_pin4'));return;}DB.set('pin',v);toast(T('ok_pin'));}
+
+/* ── RATE ───────────────────────────────── */
+function saveRate(v){DB.set('rate',parseFloat(v)||9.5);document.getElementById('ef_rateshow').textContent=(parseFloat(v)||9.5).toFixed(2);calcEntry();}
+function openRateModal(){document.getElementById('rate_inp').value=DB.rate();openModal('modal_rate');}
+function confirmRate(){const v=parseFloat(document.getElementById('rate_inp').value)||9.5;DB.set('rate',v);document.getElementById('ef_rateshow').textContent=v.toFixed(2);document.getElementById('sett_rate').value=v;document.getElementById('pay_rate').value=v;closeModal('modal_rate');toast(T('ok_rate')+v);calcEntry();}
+function saveAutoDelete(v){DB.set('autoDelete',v);toast(T('ok_autodel'));}
+
+/* ── FARMERS ────────────────────────────── */
+function openFarmerModal(idx){
+  ['fm_name','fm_phone','fm_id'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fm_idx').value='';
+  document.getElementById('modal_farm_title').textContent=T('modal_farm_title_add');
+  if(idx!==undefined){
+    const f=DB.farmers()[idx];
+    document.getElementById('modal_farm_title').textContent=T('modal_farm_title_edit');
+    document.getElementById('fm_name').value=f.name;
+    document.getElementById('fm_phone').value=f.phone||'';
+    document.getElementById('fm_id').value=f.fid||'';
+    document.getElementById('fm_idx').value=idx;
+  }
+  openModal('modal_farmer');
+}
+function saveFarmer(){
+  const name=document.getElementById('fm_name').value.trim();
+  if(!name){toast(T('err_name'));return;}
+  const farmers=DB.farmers();
+  const obj={name,phone:document.getElementById('fm_phone').value.trim(),fid:document.getElementById('fm_id').value.trim(),createdAt:Date.now()};
+  const idx=document.getElementById('fm_idx').value;
+  if(idx!==''){obj.createdAt=farmers[idx].createdAt;farmers[idx]=obj;}else farmers.push(obj);
+  DB.set('farmers',farmers);closeModal('modal_farmer');renderFarmerList();fillFarmerSelects();toast(T('ok_farmer'));
+}
+function deleteFarmer(idx){
+  if(!confirm(T('del_confirm')))return;
+  const f=DB.farmers();f.splice(idx,1);DB.set('farmers',f);renderFarmerList();fillFarmerSelects();toast(T('del_farmer'));
+}
+function renderFarmerList(){
+  const farmers=DB.farmers(),el=document.getElementById('farmers_list');
+  if(!farmers.length){el.innerHTML=`<div class="empty"><div class="eic">👨‍🌾</div><p>${T('empty_farmers').replace('\n','<br>')}</p></div>`;return;}
+  el.innerHTML=farmers.map((f,i)=>`<div class="fi-wrap"><div class="favt">${f.name.charAt(0).toUpperCase()}</div><div class="finfo"><div class="fname">${escH(f.name)}</div><div class="fmeta">${f.fid?'🪪 '+escH(f.fid)+' · ':''}${f.phone?'📱 '+escH(f.phone):''}</div></div><div class="facts"><button class="btn btn-xs btn-o" onclick="openFarmerBill(${i})" title="Bill">🧾</button><button class="btn btn-xs btn-o" onclick="openFarmerModal(${i})">✏️</button><button class="btn btn-xs btn-d" onclick="deleteFarmer(${i})">🗑️</button></div></div>`).join('');
+}
+function fillFarmerSelects(){
+  const farmers=DB.farmers();
+  [['ef_farmer',false],['rep_farmer',true],['bill_farmer',false]].forEach(([id,all])=>{
+    const sel=document.getElementById(id);if(!sel)return;
+    const prev=sel.value;sel.innerHTML='';
+    sel.appendChild(new Option(all?T('lbl_allfarmers'):T('lbl_selfarmopt'),''));
+    farmers.forEach((f,i)=>sel.appendChild(new Option(f.name+(f.fid?' ('+f.fid+')':''),i)));
+    if(prev!=='')sel.value=prev;
+  });
+}
+
+/* ── ENTRY ──────────────────────────────── */
+function calcEntry(){
+  const milk=parseFloat(document.getElementById('ef_milk').value)||0;
+  const fat=parseFloat(document.getElementById('ef_fat').value)||0;
+  const rate=DB.rate(),amt=(fat*milk*rate).toFixed(2);
+  const box=document.getElementById('entry_rb');
+  if(milk>0&&fat>0){box.classList.add('on');document.getElementById('er_milk').textContent=milk+' L';document.getElementById('er_fat').textContent=fat+'%';document.getElementById('er_rate').textContent='₹'+rate;document.getElementById('er_amount').textContent='₹'+amt;}
+  else box.classList.remove('on');
+}
+function saveEntry(){
+  const fi=document.getElementById('ef_farmer').value;
+  const milk=parseFloat(document.getElementById('ef_milk').value);
+  const fat=parseFloat(document.getElementById('ef_fat').value);
+  if(fi===''){toast(T('err_selfarm'));return;}
+  if(!milk||milk<=0){toast(T('err_milk'));return;}
+  if(!fat||fat<=0){toast(T('err_fat'));return;}
+  const farmer=DB.farmers()[fi],rate=DB.rate(),amount=parseFloat((fat*milk*rate).toFixed(2));
+  const now=new Date(),entries=DB.entries();
+  const rid='RCP-'+Date.now().toString(36).toUpperCase();
+  entries.unshift({farmerIdx:parseInt(fi),farmerName:farmer.name,farmerPhone:farmer.phone||'',farmerFid:farmer.fid||'',milk,fat,rate,amount,date:now.toISOString(),dateStr:now.toLocaleDateString('en-IN'),timeStr:now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}),receiptId:rid});
+  DB.set('entries',entries);
+  document.getElementById('ef_milk').value='';document.getElementById('ef_fat').value='';
+  document.getElementById('entry_rb').classList.remove('on');
+  toast(T('ok_entry')+amount);renderRecentEntries();renderDashboard();
+}
+function eCard(e){
+  const ej=escAttr(JSON.stringify(e));
+  return `<div class="ec"><div class="ec-hdr"><div><div class="ec-name">${escH(e.farmerName)}</div><div class="ec-date">📅 ${e.dateStr} ${e.timeStr||''}</div>${e.receiptId?`<div class="ec-rid"># ${e.receiptId}</div>`:''}</div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px"><span class="badge bg-g">₹${e.amount}</span><button class="btn btn-xs btn-o" onclick='viewReceipt(${ej})'>🧾</button></div></div><div class="ec-dets"><div class="ed"><div class="edl">${T('w_milk')}</div><div class="edv">${e.milk}L</div></div><div class="ed"><div class="edl">Fat %</div><div class="edv">${e.fat}%</div></div><div class="ed"><div class="edl">${T('w_amount')}</div><div class="edv">₹${e.amount}</div></div></div></div>`;
+}
+function renderRecentEntries(){
+  const entries=DB.entries().slice(0,8),el=document.getElementById('recent_list');
+  el.innerHTML=entries.length?entries.map(e=>eCard(e)).join(''):`<div class="empty"><div class="eic">📭</div><p>${T('empty_entries')}</p></div>`;
+}
+
+/* ── DASHBOARD ──────────────────────────── */
+function renderDashboard(){
+  const today=new Date().toDateString(),entries=DB.entries();
+  const te=entries.filter(e=>new Date(e.date).toDateString()===today);
+  document.getElementById('ds_milk').textContent=te.reduce((s,e)=>s+e.milk,0).toFixed(1)+' L';
+  document.getElementById('ds_pay').textContent='₹'+te.reduce((s,e)=>s+e.amount,0).toFixed(0);
+  document.getElementById('ds_farm').textContent=DB.farmers().length;
+  const af=te.length?te.reduce((s,e)=>s+e.fat,0)/te.length:0;
+  document.getElementById('ds_fat').textContent=af.toFixed(1)+'%';
+  const el=document.getElementById('today_list');
+  el.innerHTML=te.length?te.slice(0,4).map(e=>eCard(e)).join(''):`<div class="empty"><div class="eic">📭</div><p>${T('empty_entries')}</p></div>`;
+}
+
+/* ── REPORTS ────────────────────────────── */
+let repPeriod='daily';
+function switchRepTab(p,btn){repPeriod=p;document.querySelectorAll('#rep_tabs .tb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderReports();}
+function renderReports(){
+  fillFarmerSelects();let entries=DB.entries();const now=new Date();
+  if(repPeriod==='daily'){const t=now.toDateString();entries=entries.filter(e=>new Date(e.date).toDateString()===t);}
+  else if(repPeriod==='weekly'){const s=new Date(now);s.setDate(now.getDate()-6);entries=entries.filter(e=>new Date(e.date)>=s);}
+  else if(repPeriod==='monthly'){entries=entries.filter(e=>{const d=new Date(e.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();});}
+  const fi=document.getElementById('rep_farmer').value;
+  if(fi!=='')entries=entries.filter(e=>e.farmerIdx===parseInt(fi));
+  const tm=entries.reduce((s,e)=>s+e.milk,0),tp=entries.reduce((s,e)=>s+e.amount,0),af=entries.length?entries.reduce((s,e)=>s+e.fat,0)/entries.length:0;
+  const sumEl=document.getElementById('rep_summ');
+  if(entries.length){sumEl.style.display='block';document.getElementById('rs_milk').textContent=tm.toFixed(2)+' L';document.getElementById('rs_fat').textContent=af.toFixed(2)+'%';document.getElementById('rs_pay').textContent='₹'+tp.toFixed(2);}
+  else sumEl.style.display='none';
+  const el=document.getElementById('reports_list');
+  el.innerHTML=entries.length?entries.map(e=>eCard(e)).join(''):`<div class="empty"><div class="eic">📊</div><p>${T('empty_reports')}</p></div>`;
+}
+
+/* ── CALCULATOR ─────────────────────────── */
+let C={val:'0',expr:'',done:false};
+const OPS=['÷','×','−','+'];
+const isOp=ch=>OPS.includes(ch);
+function lastNum(e){const m=e.match(/[0-9.]+$/);return m?m[0]:'';}
+function ck(k){
+  if(k==='C'){C={val:'0',expr:'',done:false};updC();return;}
+  if(k==='DEL'){
+    if(C.done){C={val:'0',expr:'',done:false};}
+    else{C.expr=C.expr.slice(0,-1);C.val=lastNum(C.expr)||(C.expr?C.expr.slice(-1):'0');}
+    updC();return;
+  }
+  if(k==='='){
+    if(!C.expr){return;}
+    try{
+      let e=C.expr.replace(/[÷×−+]+$/,'');          /* trailing operator hatao */
+      if(!e)return;
+      e=e.replace(/(\d+\.?\d*|\.\d+)%/g,'($1/100)')  /* 50% -> (50/100) */
+         .replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-');
+      if(!/^[0-9+\-*/().\s]+$/.test(e))throw 0;
+      let r=Function('"use strict";return('+e+')')();
+      if(typeof r!=='number'||!isFinite(r))throw 0;
+      r=parseFloat(r.toFixed(10));
+      C={val:String(r),expr:C.expr+'=',done:true};
+    }catch(err){C={val:'Error',expr:C.expr,done:true,err:true};}
+    updC();return;
+  }
+  if(k==='%'){
+    if(C.done&&!C.err){C={val:C.val,expr:C.val+'%',done:false};}
+    else if(/[0-9.]$/.test(C.expr)){C.expr+='%';}
+    C.val='%';updC();return;
+  }
+  if(isOp(k)){
+    if(C.done&&C.err){C={val:'0',expr:'',done:false};}
+    if(C.done){C={val:k,expr:C.val+k,done:false};}
+    else if(!C.expr){C.expr=(k==='−')?'−':'0'+k;}                 /* shuru me minus allow */
+    else if(C.expr==='−'){/* kuch nahi */}
+    else if(isOp(C.expr.slice(-1))){C.expr=C.expr.slice(0,-1)+k;}   /* operator badalna */
+    else{C.expr+=k;}
+    C.val=k;updC();return;
+  }
+  if(k==='.'){
+    if(C.done){C={val:'0.',expr:'0.',done:false};updC();return;}
+    const n=lastNum(C.expr);
+    if(n.includes('.')){return;}
+    if(n===''||C.expr.slice(-1)==='%'){ if(C.expr.slice(-1)==='%')return; C.expr+='0.';}
+    else C.expr+='.';
+    C.val=lastNum(C.expr);updC();return;
+  }
+  /* digit */
+  if(C.done){C={val:k,expr:k,done:false};updC();return;}
+  if(C.expr.slice(-1)==='%')return;
+  const n=lastNum(C.expr);
+  if(n==='0'){C.expr=C.expr.slice(0,-1)+k;}else{C.expr+=k;}
+  C.val=lastNum(C.expr);
+  updC();
+}
+function updC(){document.getElementById('c_val').textContent=C.val;document.getElementById('c_expr').textContent=C.expr;}
+
+/* ── TOOL TABS ──────────────────────────── */
+function switchToolTab(tab,btn){['milk','pay','mix','calc'].forEach(t=>document.getElementById('tool_'+t).style.display='none');document.getElementById('tool_'+tab).style.display='block';document.querySelectorAll('#tool_tabs .tb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
+function switchMilkTab(tab,btn){['reduce','increase'].forEach(t=>document.getElementById('milk_'+t).style.display='none');document.getElementById('milk_'+tab).style.display='block';document.querySelectorAll('#milk_tabs .tb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
+function toggleLF(){document.getElementById('dil_lfrow').style.display=document.getElementById('dil_type').value==='lowfat'?'block':'none';}
+
+/* ── MILK OPS ───────────────────────────── */
+function showErr(id,msg){const el=document.getElementById(id);el.textContent='⚠️ '+msg;el.classList.add('on');}
+function hideErr(id){document.getElementById(id).classList.remove('on');}
+function calcDilute(){
+  hideErr('dil_err');document.getElementById('dil_rb').classList.remove('on');
+  const milk=parseFloat(document.getElementById('dil_milk').value);
+  const cur=parseFloat(document.getElementById('dil_cur').value);
+  const tgt=parseFloat(document.getElementById('dil_tgt').value);
+  const type=document.getElementById('dil_type').value;
+  if(isNaN(milk)||milk<=0){showErr('dil_err',T('err_milkqty'));return;}
+  if(isNaN(cur)||cur<=0){showErr('dil_err',T('err_curfat'));return;}
+  if(isNaN(tgt)||tgt<=0){showErr('dil_err',T('err_tgtfat'));return;}
+  if(tgt>=cur){showErr('dil_err',T('err_dil_dir'));return;}
+  let add=0,lbl=T('water_lbl');
+  if(type==='water'){add=milk*(cur-tgt)/tgt;}
+  else{const lf=parseFloat(document.getElementById('dil_lfpct').value);if(isNaN(lf)||lf<0){showErr('dil_err',T('err_lfpct'));return;}if(lf>=tgt){showErr('dil_err',T('err_lfdir'));return;}add=milk*(cur-tgt)/(tgt-lf);lbl=T('lowfat_lbl');}
+  const total=milk+add;
+  document.getElementById('dr_src').textContent=milk.toFixed(2)+' L @ '+cur+'%';
+  document.getElementById('dr_add').textContent=add.toFixed(2)+' L '+lbl;
+  document.getElementById('dr_tot').textContent=total.toFixed(2)+' L @ '+tgt+'%';
+  document.getElementById('dil_rb').classList.add('on');
+}
+function calcIncrease(){
+  hideErr('inc_err');document.getElementById('inc_rb').classList.remove('on');
+  const milk=parseFloat(document.getElementById('inc_milk').value);
+  const cur=parseFloat(document.getElementById('inc_cur').value);
+  const tgt=parseFloat(document.getElementById('inc_tgt').value);
+  const hf=parseFloat(document.getElementById('inc_hf').value);
+  if(isNaN(milk)||milk<=0){showErr('inc_err',T('err_milkqty'));return;}
+  if(isNaN(cur)||cur<=0){showErr('inc_err',T('err_curfat'));return;}
+  if(isNaN(tgt)||tgt<=0){showErr('inc_err',T('err_tgtfat'));return;}
+  if(isNaN(hf)||hf<=0){showErr('inc_err',T('err_hfpct'));return;}
+  if(tgt<=cur){showErr('inc_err',T('err_inc_dir'));return;}
+  if(hf<=tgt){showErr('inc_err',T('err_hfdir'));return;}
+  const add=milk*(tgt-cur)/(hf-tgt),total=milk+add;
+  document.getElementById('ir_src').textContent=milk.toFixed(2)+' L @ '+cur+'%';
+  document.getElementById('ir_add').textContent=add.toFixed(2)+' L @ '+hf+'%';
+  document.getElementById('ir_tot').textContent=total.toFixed(2)+' L @ '+tgt+'%';
+  document.getElementById('inc_rb').classList.add('on');
+}
+function calcMix(){
+  const aq=parseFloat(document.getElementById('mx_aq').value),af=parseFloat(document.getElementById('mx_af').value);
+  const bq=parseFloat(document.getElementById('mx_bq').value),bf=parseFloat(document.getElementById('mx_bf').value);
+  if(!aq||!af||!bq||!bf){toast(T('err_allvals'));return;}
+  const tot=aq+bq,fat=(aq*af+bq*bf)/tot;
+  document.getElementById('mx_a').textContent=aq.toFixed(2)+' L @ '+af+'%';
+  document.getElementById('mx_b').textContent=bq.toFixed(2)+' L @ '+bf+'%';
+  document.getElementById('mx_fat').textContent=fat.toFixed(2)+'%';
+  document.getElementById('mx_tot').textContent=tot.toFixed(2)+' L';
+  document.getElementById('mix_rb').classList.add('on');
+}
+function calcPay(){
+  const milk=parseFloat(document.getElementById('pay_milk').value)||0;
+  const fat=parseFloat(document.getElementById('pay_fat').value)||0;
+  const rate=parseFloat(document.getElementById('pay_rate').value)||0;
+  const units=fat*milk;
+  document.getElementById('pr_units').textContent=units.toFixed(3)+' units';
+  document.getElementById('pr_rate').textContent='₹'+rate;
+  document.getElementById('pr_amt').textContent='₹'+(units*rate).toFixed(2);
+  document.getElementById('pay_rb').classList.add('on');
+}
+
+/* ── RECEIPT ────────────────────────────── */
+let curReceipt=null;
+function buildRcpHTML(e,farmer){
+  const rid=e.receiptId||'RCP-???';
+  return `<div style="border:2px dashed var(--bd);border-radius:11px;padding:14px;background:var(--bg)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px"><div style="font-size:1.1rem;font-weight:700;color:var(--pri)">🐄 Dudh Register</div><div style="font-size:.6rem;color:var(--tx3);font-weight:700"># ${rid}</div></div>
+    <div style="height:1px;background:var(--bd);margin-bottom:9px"></div>
+    <div style="margin-bottom:8px"><div style="font-size:.65rem;color:var(--tx3);font-weight:700">${T('rcp_farmer')}</div><div style="font-size:.95rem;font-weight:700">${escH(e.farmerName)}</div>${farmer&&farmer.fid?`<div style="font-size:.7rem;color:var(--tx3)">🪪 ${escH(farmer.fid)}</div>`:''}${farmer&&farmer.phone?`<div style="font-size:.7rem;color:var(--tx3)">📱 ${escH(farmer.phone)}</div>`:''}</div>
+    <div style="height:1px;background:var(--bd);margin-bottom:9px"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:9px">
+      <div style="background:var(--card);border-radius:7px;padding:7px;text-align:center"><div style="font-size:.6rem;color:var(--tx3);font-weight:700">${T('rcp_milk')}</div><div style="font-size:1.05rem;font-weight:800;color:var(--pri)">${e.milk} L</div></div>
+      <div style="background:var(--card);border-radius:7px;padding:7px;text-align:center"><div style="font-size:.6rem;color:var(--tx3);font-weight:700">FAT %</div><div style="font-size:1.05rem;font-weight:800;color:var(--pri)">${e.fat}%</div></div>
+      <div style="background:var(--card);border-radius:7px;padding:7px;text-align:center"><div style="font-size:.6rem;color:var(--tx3);font-weight:700">RATE</div><div style="font-size:1.05rem;font-weight:800;color:var(--pri)">₹${e.rate}</div></div>
+      <div style="background:var(--card);border-radius:7px;padding:7px;text-align:center"><div style="font-size:.6rem;color:var(--tx3);font-weight:700">${T('rcp_date')}</div><div style="font-size:.8rem;font-weight:700">${e.dateStr}</div></div>
+    </div>
+    <div style="background:linear-gradient(135deg,var(--pri),var(--pri2));border-radius:9px;padding:12px;text-align:center;color:#fff">
+      <div style="font-size:.75rem;opacity:.85">${T('rcp_total')}</div>
+      <div style="font-size:1.8rem;font-weight:800">₹${e.amount}</div>
+      <div style="font-size:.65rem;opacity:.7">${e.fat} × ${e.milk} × ${e.rate}</div>
+    </div>
+    <div style="text-align:center;font-size:.62rem;color:var(--tx3);margin-top:7px">Dudh Register • ${e.timeStr||''} ${e.dateStr}</div>
+  </div>`;
+}
+function buildRcpTxt(e){
+  return `🐄 *Dudh Register Receipt*\n# ${e.receiptId||''}\n──────────────────\n👨‍🌾 ${T('rcp_farmer')}: *${e.farmerName}*\n📅 ${e.dateStr} ${e.timeStr||''}\n──────────────────\n🥛 ${T('rcp_milk')}: ${e.milk} L\n💧 Fat: ${e.fat}%\n💵 Rate: ₹${e.rate}\n──────────────────\n💰 ${T('rcp_total')}: *₹${e.amount}*\n──────────────────\n_Dudh Register App_`;
+}
+function viewReceipt(e){if(typeof e==='string')e=JSON.parse(e);curReceipt=e;document.getElementById('rcp_content').innerHTML=buildRcpHTML(e,DB.farmers()[e.farmerIdx]||{});openModal('modal_receipt');}
+function shareRcpWA(){if(!curReceipt)return;window.open('https://wa.me/?text='+encodeURIComponent(buildRcpTxt(curReceipt)),'_blank');}
+function shareRcpNative(){if(!curReceipt)return;const text=buildRcpTxt(curReceipt);if(navigator.share){navigator.share({title:'Dudh Register Receipt',text}).catch(()=>{});}else{navigator.clipboard.writeText(text).then(()=>toast(T('ok_copy'))).catch(()=>toast('❌ Share not supported'));}}
+function downloadRcpPDF(){
+  if(!curReceipt){toast('No receipt');return;}
+  const e=curReceipt,farmer=DB.farmers()[e.farmerIdx]||{};
+  const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'portrait',unit:'mm',format:[80,130]});
+  const m=5,pw=80;
+  doc.setFillColor(26,107,60);doc.rect(0,0,pw,20,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(12);doc.setFont(undefined,'bold');doc.text('Dudh Register',m,9);
+  doc.setFontSize(7);doc.setFont(undefined,'normal');doc.text('Milk Dairy Receipt',m,14);doc.text('#'+e.receiptId,pw-m,14,{align:'right'});
+  let y=26;doc.setTextColor(30,46,34);doc.setFontSize(9);
+  doc.setFont(undefined,'bold');doc.text('Farmer:',m,y);doc.setFont(undefined,'normal');doc.text(e.farmerName,m+18,y);y+=6;
+  if(farmer.fid){doc.setFont(undefined,'bold');doc.text('ID:',m,y);doc.setFont(undefined,'normal');doc.text(farmer.fid,m+8,y);y+=5;}
+  if(farmer.phone){doc.setFont(undefined,'bold');doc.text('Phone:',m,y);doc.setFont(undefined,'normal');doc.text(farmer.phone,m+14,y);y+=5;}
+  doc.setFont(undefined,'bold');doc.text('Date:',m,y);doc.setFont(undefined,'normal');doc.text(e.dateStr+' '+(e.timeStr||''),m+13,y);y+=7;
+  doc.setDrawColor(200,224,208);doc.line(m,y,pw-m,y);y+=5;doc.setFontSize(8);
+  [['Milk:',e.milk+' L'],['Fat:',e.fat+'%'],['Rate:','Rs '+e.rate]].forEach(([l,v])=>{doc.text(l,m,y);doc.text(v,pw-m,y,{align:'right'});y+=5;});
+  doc.line(m,y,pw-m,y);y+=5;
+  doc.setFillColor(26,107,60);doc.rect(m-1,y-4,pw-2*m+2,12,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(10);doc.setFont(undefined,'bold');doc.text('TOTAL: Rs '+e.amount,pw/2,y+3,{align:'center'});
+  y+=16;doc.setTextColor(150,150,150);doc.setFontSize(7);doc.setFont(undefined,'normal');doc.text('Generated by Dudh Register App',pw/2,y,{align:'center'});
+  doc.save('Receipt_'+e.receiptId+'.pdf');toast(T('ok_pdf'));
+}
+
+
+/* ── PRINTER (ESC/POS: Bluetooth / USB / RawBT / system) ───────── */
+const PR={dev:null,ch:null,usb:null,ep:null,chunk:100};
+const PRN_SVCS=['000018f0-0000-1000-8000-00805f9b34fb','0000ff00-0000-1000-8000-00805f9b34fb','0000ffe0-0000-1000-8000-00805f9b34fb','0000fee7-0000-1000-8000-00805f9b34fb','0000ae30-0000-1000-8000-00805f9b34fb','49535343-fe7d-4ae5-8fa9-9fafd205e455','e7810a71-73ae-499d-8c15-faa9aef0c3f2','00001101-0000-1000-8000-00805f9b34fb'];
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const prnWidth=()=>parseInt(DB._g('prnW'))===80?80:58;
+const prnMethod=()=>DB._g('prnM')||'';
+
+function openPrinter(){
+  document.getElementById('prn_paper').value=String(prnWidth());
+  updPrnUI();openModal('modal_printer');
+}
+function updPrnUI(){
+  const m=prnMethod();
+  ['bt','usb','rawbt','sys'].forEach(k=>{const b=document.getElementById('prn_'+k);b.classList.toggle('btn-p',m===k);b.classList.toggle('btn-o',m!==k);});
+}
+function pickPrinter(m){
+  DB.set('prnM',m);updPrnUI();closeModal('modal_printer');
+  if(curReceipt)doPrint(m);
+}
+function printRcp(){
+  if(!curReceipt)return;
+  const m=prnMethod();
+  if(!m){openPrinter();return;}
+  doPrint(m);
+}
+
+/* receipt -> canvas (image prints Hindi names correctly on any thermal printer) */
+function rcpCanvas(e,f){
+  const W=prnWidth()===80?576:384,s=W/384,P=12*s,F='sans-serif';
+  const c=document.createElement('canvas');c.width=W;c.height=2200;
+  const draw=()=>{
+    const x=c.getContext('2d');
+    x.fillStyle='#fff';x.fillRect(0,0,W,c.height);x.fillStyle='#000';x.strokeStyle='#000';x.textBaseline='top';
+    let y=8*s;
+    const font=(sz,b)=>(b?'bold ':'')+Math.round(sz*s)+'px '+F;
+    const ctr=(t,sz,b)=>{let fs=Math.round(sz*s);x.font=(b?'bold ':'')+fs+'px '+F;while(x.measureText(t).width>W-2*P&&fs>10){fs--;x.font=(b?'bold ':'')+fs+'px '+F;}x.textAlign='center';x.fillText(t,W/2,y);y+=Math.round(fs*1.35);};
+    const row=(l,r,sz,b)=>{x.font=font(sz,b);x.textAlign='left';x.fillText(l,P,y);x.textAlign='right';x.fillText(r,W-P,y);y+=Math.round(sz*s*1.4);};
+    const dash=()=>{y+=3*s;x.lineWidth=Math.max(1,Math.round(s));x.setLineDash([6*s,4*s]);x.beginPath();x.moveTo(P,y);x.lineTo(W-P,y);x.stroke();y+=8*s;};
+    ctr('Dudh Register',30,true);
+    ctr(e.receiptId?'# '+e.receiptId:'',17,false);
+    dash();
+    row(T('rcp_farmer'),'',16,false);y-=6*s;
+    ctr(e.farmerName||'',24,true);
+    if(f&&f.fid)row('ID',String(f.fid),17,false);
+    if(f&&f.phone)row('Mob',String(f.phone),17,false);
+    row(T('rcp_date'),(e.dateStr||'')+' '+(e.timeStr||''),17,false);
+    dash();
+    row(T('rcp_milk'),e.milk+' L',22,false);
+    row('Fat',e.fat+' %',22,false);
+    row('Rate','₹ '+e.rate,22,false);
+    dash();
+    row(T('rcp_total'),'',16,false);y-=6*s;
+    ctr('₹ '+e.amount,40,true);
+    ctr(e.fat+' × '+e.milk+' × '+e.rate,15,false);
+    dash();
+    ctr('Thank you',16,false);
+    return y;
+  };
+  const h=draw();c.height=Math.ceil(h+14*s);draw();
+  return c;
+}
+
+/* canvas -> ESC/POS raster bytes */
+function escposRaster(c){
+  const W=c.width,H=c.height,bw=W>>3;
+  const d=c.getContext('2d').getImageData(0,0,W,H).data;
+  const out=[0x1B,0x40];
+  for(let y0=0;y0<H;y0+=200){
+    const h=Math.min(200,H-y0);
+    out.push(0x1D,0x76,0x30,0x00,bw&255,bw>>8,h&255,h>>8);
+    for(let y=y0;y<y0+h;y++)for(let b=0;b<bw;b++){
+      let v=0;
+      for(let k=0;k<8;k++){const i=(y*W+b*8+k)*4;if(d[i]*0.299+d[i+1]*0.587+d[i+2]*0.114<150)v|=0x80>>k;}
+      out.push(v);
+    }
+  }
+  out.push(0x1B,0x64,4,0x1D,0x56,0x42,0x00); /* feed + cut (ignored if no cutter) */
+  return new Uint8Array(out);
+}
+
+/* Bluetooth (BLE) */
+async function prnConnectBT(){
+  if(!navigator.bluetooth)throw new Error(T('prn_nobt'));
+  if(PR.dev&&PR.dev.gatt.connected&&PR.ch)return;
+  if(!PR.dev){
+    PR.dev=await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:PRN_SVCS});
+    PR.dev.addEventListener('gattserverdisconnected',()=>{PR.ch=null;});
+  }
+  const srv=await PR.dev.gatt.connect();
+  let ch=null;
+  for(const sv of await srv.getPrimaryServices()){
+    for(const c of await sv.getCharacteristics()){if(c.properties.writeWithoutResponse||c.properties.write){ch=c;break;}}
+    if(ch)break;
+  }
+  if(!ch)throw new Error(T('prn_nochar'));
+  PR.ch=ch;
+}
+async function prnWriteBT(bytes){
+  const nr=PR.ch.properties.writeWithoutResponse;
+  let i=0;
+  while(i<bytes.length){
+    const part=bytes.slice(i,i+PR.chunk);
+    try{if(nr)await PR.ch.writeValueWithoutResponse(part);else await PR.ch.writeValue(part);i+=part.length;await sleep(25);}
+    catch(err){if(PR.chunk>20){PR.chunk=20;continue;}throw err;}
+  }
+}
+
+/* USB */
+async function prnConnectUSB(){
+  if(!navigator.usb)throw new Error(T('prn_nousb'));
+  if(PR.usb&&PR.usb.opened&&PR.ep)return;
+  const d=PR.usb||await navigator.usb.requestDevice({filters:[]});
+  if(!d.opened)await d.open();
+  if(!d.configuration)await d.selectConfiguration(1);
+  let found=null;
+  for(const itf of d.configuration.interfaces)for(const a of itf.alternates)for(const ep of a.endpoints){
+    if(ep.direction==='out'&&ep.type==='bulk'&&(!found||a.interfaceClass===7))found={n:itf.interfaceNumber,alt:a.alternateSetting,ep:ep.endpointNumber};
+  }
+  if(!found)throw new Error(T('prn_noep'));
+  await d.claimInterface(found.n);
+  if(found.alt)await d.selectAlternateInterface(found.n,found.alt);
+  PR.usb=d;PR.ep=found.ep;
+}
+async function prnWriteUSB(bytes){
+  for(let i=0;i<bytes.length;i+=1024)await PR.usb.transferOut(PR.ep,bytes.slice(i,i+1024));
+}
+
+/* RawBT (Android app for Bluetooth Classic printers) */
+function prnRawBT(bytes){
+  let bin='';for(let i=0;i<bytes.length;i+=8192)bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+8192));
+  location.href='intent:base64,'+btoa(bin)+'#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;';
+}
+
+/* Normal system print dialog */
+function prnSystem(c){
+  const w=prnWidth(),url=c.toDataURL('image/png');
+  const f=document.createElement('iframe');
+  f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+  f.onload=()=>{
+    const im=f.contentDocument&&f.contentDocument.querySelector('img');if(!im)return;
+    const go=()=>{f.contentWindow.focus();f.contentWindow.print();setTimeout(()=>f.remove(),60000);};
+    if(im.complete)go();else im.onload=go;
+  };
+  f.srcdoc='<html><head><style>@page{size:'+w+'mm auto;margin:0}html,body{margin:0;padding:0}img{width:'+w+'mm;display:block}</style></head><body><img src="'+url+'"></body></html>';
+  document.body.appendChild(f);
+}
+
+async function doPrint(m){
+  try{
+    const e=curReceipt,f=DB.farmers()[e.farmerIdx]||{};
+    const c=rcpCanvas(e,f);
+    if(m==='sys'){prnSystem(c);return;}
+    const bytes=escposRaster(c);
+    if(m==='rawbt'){prnRawBT(bytes);return;}
+    toast(T('prn_wait'));
+    if(m==='usb'){await prnConnectUSB();await prnWriteUSB(bytes);}
+    else{await prnConnectBT();await prnWriteBT(bytes);}
+    toast(T('ok_print'));
+  }catch(err){
+    if(m==='bt'){PR.dev=null;PR.ch=null;}
+    if(m==='usb'){PR.usb=null;PR.ep=null;}
+    if(err&&(err.name==='NotFoundError'||err.name==='AbortError'))return; /* user ne chooser band kiya */
+    toast(err&&err.message&&err.message.length<90?T('err_print')+': '+err.message:T('err_print'));
+  }
+}
+
+/* ── BILL PDF ───────────────────────────── */
+function openBillModal(){fillFarmerSelects();const t=new Date(),f=new Date(t.getFullYear(),t.getMonth(),1);document.getElementById('bill_from').value=f.toISOString().split('T')[0];document.getElementById('bill_to').value=t.toISOString().split('T')[0];openModal('modal_bill');}
+function openFarmerBill(fi){openBillModal();document.getElementById('bill_farmer').value=fi;}
+function getBillData(){
+  const fi=document.getElementById('bill_farmer').value,fromStr=document.getElementById('bill_from').value,toStr=document.getElementById('bill_to').value;
+  if(fi===''){toast(T('err_nofarm'));return null;}
+  if(!fromStr||!toStr){toast(T('err_nodate'));return null;}
+  const from=new Date(fromStr);from.setHours(0,0,0,0);const to=new Date(toStr);to.setHours(23,59,59,999);
+  const entries=DB.entries().filter(e=>{const d=new Date(e.date);return e.farmerIdx===parseInt(fi)&&d>=from&&d<=to;}).reverse();
+  if(!entries.length){toast(T('err_noentry'));return null;}
+  return{fi,fromStr,toStr,entries,farmer:DB.farmers()[parseInt(fi)]};
+}
+function generateBill(){
+  const d=getBillData();if(!d)return;
+  const{fromStr,toStr,entries,farmer}=d;
+  const tm=entries.reduce((s,e)=>s+e.milk,0),tp=entries.reduce((s,e)=>s+e.amount,0),af=entries.reduce((s,e)=>s+e.fat,0)/entries.length;
+  const{jsPDF}=window.jspdf,doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const pw=210,m=14;
+  doc.setFillColor(26,107,60);doc.rect(0,0,pw,34,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(18);doc.setFont(undefined,'bold');doc.text('Dudh Register',m,13);
+  doc.setFontSize(8);doc.setFont(undefined,'normal');doc.text('Milk Dairy Management System',m,20);
+  doc.setFontSize(11);doc.setFont(undefined,'bold');doc.text('PAYMENT RECEIPT',m,29);
+  let y=46;doc.setTextColor(30,46,34);doc.setFontSize(10);
+  doc.setFont(undefined,'bold');doc.text('Farmer:',m,y);doc.setFont(undefined,'normal');doc.text(farmer.name,m+20,y);
+  if(farmer.fid){doc.setFont(undefined,'bold');doc.text('ID:',m+85,y);doc.setFont(undefined,'normal');doc.text(farmer.fid,m+92,y);}
+  y+=7;if(farmer.phone){doc.setFont(undefined,'bold');doc.text('Phone:',m,y);doc.setFont(undefined,'normal');doc.text(farmer.phone,m+17,y);y+=7;}
+  doc.setFont(undefined,'bold');doc.text('Period:',m,y);doc.setFont(undefined,'normal');doc.text(fromStr+' to '+toStr,m+19,y);
+  y+=10;doc.setFillColor(240,247,242);doc.rect(m,y-5,pw-2*m,9,'F');
+  doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(26,107,60);
+  doc.text('Date',m+2,y);doc.text('Time',m+27,y);doc.text('Milk(L)',m+50,y);doc.text('Fat%',m+71,y);doc.text('Rate',m+89,y);doc.text('Amount',m+108,y);doc.text('Receipt#',m+135,y);
+  y+=3;doc.setDrawColor(200,224,208);doc.line(m,y,pw-m,y);y+=5;
+  doc.setFont(undefined,'normal');doc.setTextColor(30,46,34);doc.setFontSize(8);
+  entries.forEach((e,i)=>{
+    if(y>272){doc.addPage();y=20;}
+    if(i%2===1){doc.setFillColor(248,253,249);doc.rect(m,y-4,pw-2*m,8,'F');}
+    doc.text(e.dateStr||'',m+2,y);doc.text(e.timeStr||'',m+27,y);doc.text(e.milk.toFixed(2),m+50,y);doc.text(e.fat.toFixed(2),m+71,y);doc.text(e.rate.toFixed(2),m+89,y);doc.text('Rs '+e.amount.toFixed(2),m+108,y);doc.text((e.receiptId||'').slice(-8),m+135,y);y+=8;
+  });
+  y+=4;doc.setDrawColor(26,107,60);doc.line(m,y,pw-m,y);y+=7;
+  doc.setFillColor(26,107,60);doc.rect(m,y-5,pw-2*m,13,'F');
+  doc.setTextColor(255,255,255);doc.setFont(undefined,'bold');doc.setFontSize(9);
+  doc.text('Total Milk: '+tm.toFixed(2)+' L',m+3,y+2);doc.text('Avg Fat: '+af.toFixed(2)+'%',m+65,y+2);doc.text('TOTAL: Rs '+tp.toFixed(2),pw-m-3,y+2,{align:'right'});
+  y+=16;doc.setTextColor(140,160,140);doc.setFontSize(7);doc.setFont(undefined,'normal');doc.text('Generated by Dudh Register v2.0 | '+new Date().toLocaleString(),m,y);
+  doc.save('DudhRegister_Bill_'+farmer.name+'_'+fromStr+'_to_'+toStr+'.pdf');
+  closeModal('modal_bill');toast(T('ok_bill'));
+}
+function shareBillWA(){
+  const d=getBillData();if(!d)return;
+  const{fromStr,toStr,entries,farmer}=d;
+  const tm=entries.reduce((s,e)=>s+e.milk,0),tp=entries.reduce((s,e)=>s+e.amount,0),af=entries.reduce((s,e)=>s+e.fat,0)/entries.length;
+  let text=`🐄 *Dudh Register Bill*\n👨‍🌾 *${farmer.name}*\n${farmer.fid?'🪪 '+farmer.fid+'\n':''}${farmer.phone?'📱 '+farmer.phone+'\n':''}📅 ${fromStr} → ${toStr}\n──────────────────\n`;
+  entries.forEach(e=>{text+=`${e.dateStr}: ${e.milk}L @ ${e.fat}% = ₹${e.amount}\n`;});
+  text+=`──────────────────\n🥛 Total: *${tm.toFixed(2)} L*\n📊 Avg Fat: *${af.toFixed(2)}%*\n💰 Total: *₹${tp.toFixed(2)}*\n_Dudh Register App_`;
+  window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
+}
+
+/* ── EXPORT / BACKUP ────────────────────── */
+function exportCSV(){
+  const entries=DB.entries();if(!entries.length){toast(T('err_allvals'));return;}
+  const rows=[['Receipt ID','Date','Time','Farmer','Farmer ID','Phone','Milk (L)','Fat %','Rate','Amount (Rs)']];
+  entries.forEach(e=>{const f=DB.farmers()[e.farmerIdx]||{};rows.push([e.receiptId||'',e.dateStr||'',e.timeStr||'',e.farmerName,f.fid||'',f.phone||'',e.milk,e.fat,e.rate,e.amount]);});
+  dlFile('DudhRegister_Export_'+td()+'.csv',rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n'),'text/csv');
+  toast(T('ok_csv'));
+}
+function backupData(){dlFile('DudhRegister_Backup_'+td()+'.json',JSON.stringify({farmers:DB.farmers(),entries:DB.entries(),rate:DB.rate(),autoDelete:DB.autoDelete(),exportedAt:new Date().toISOString()},null,2),'application/json');toast(T('ok_backup'));}
+function doRestore(ev){
+  const file=ev.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{try{const d=JSON.parse(e.target.result);if(!d.farmers||!d.entries)throw 0;DB.set('farmers',d.farmers);DB.set('entries',d.entries);if(d.rate)DB.set('rate',d.rate);if(d.autoDelete)DB.set('autoDelete',d.autoDelete);refreshAll();toast(T('ok_restore')+' Farmers:'+d.farmers.length);}catch{toast(T('err_backup'));}};
+  reader.readAsText(file);
+}
+function confirmClear(){if(!confirm(T('clear_confirm1')))return;if(!confirm(T('clear_confirm2')))return;['farmers','entries'].forEach(k=>localStorage.removeItem('db_'+k));refreshAll();toast(T('ok_clear'));}
+
+/* ── UTILS ──────────────────────────────── */
+function openModal(id){document.getElementById(id).classList.add('on');}
+function closeModal(id){document.getElementById(id).classList.remove('on');}
+let _tt;
+function toast(msg){const el=document.getElementById('toast_el');el.textContent=msg;el.classList.add('on');clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('on'),2800);}
+function escH(s){const d=document.createElement('div');d.appendChild(document.createTextNode(String(s||'')));return d.innerHTML;}
+function escAttr(s){return String(s||'').replace(/'/g,'&#39;').replace(/"/g,'&quot;');}
+function td(){return new Date().toISOString().split('T')[0];}
+function dlFile(name,content,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
+function refreshAll(){fillFarmerSelects();renderFarmerList();renderDashboard();renderRecentEntries();applyLang();const r=DB.rate();document.getElementById('ef_rateshow').textContent=r.toFixed(2);document.getElementById('sett_rate').value=r;document.getElementById('pay_rate').value=r;}
+</script>
+</body>
+</html>

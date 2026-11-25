@@ -190,9 +190,124 @@ html,body{font-family:var(--font);background:var(--bg);color:var(--tx);min-heigh
 
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px}
+
+/* ═══ AUTH GATE (added) — all selectors namespaced #authGate / .au-* ═══ */
+#authGate{position:fixed;inset:0;z-index:700;background:var(--pri);display:flex;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:18px 14px}
+#authGate.off{display:none}
+#authGate .btn:disabled{opacity:.55;pointer-events:none}
+.au-wrap{width:100%;max-width:400px;margin:auto}
+.au-brand{text-align:center;margin-bottom:14px}
+.au-logo{font-size:2.6rem;line-height:1}
+.au-name{color:#fff;font-size:1.22rem;font-weight:700;margin-top:6px}
+.au-tag{color:rgba(255,255,255,.7);font-size:.76rem;margin-top:2px}
+.au-box{background:var(--card);border:1.5px solid var(--bd);border-radius:var(--r);padding:18px 16px;box-shadow:0 8px 28px rgba(0,0,0,.22)}
+.au-s{display:none}
+.au-s.on{display:block}
+.au-h{font-size:1.05rem;font-weight:700;color:var(--tx);margin-bottom:3px}
+.au-sub{font-size:.75rem;color:var(--tx3);margin-bottom:14px;line-height:1.5}
+.au-pw{position:relative}
+.au-pw .fc{padding-right:46px}
+.au-eye{position:absolute;right:4px;top:4px;width:40px;height:40px;border:none;background:none;font-size:1.05rem;cursor:pointer;color:var(--tx2)}
+.au-link{display:block;width:100%;text-align:center;margin-top:12px;background:none;border:none;color:var(--pri);font-family:var(--font);font-size:.8rem;font-weight:600;cursor:pointer;text-decoration:underline;padding:4px}
+.au-msg{display:none;font-size:.76rem;line-height:1.45;padding:9px 11px;border-radius:9px;margin-bottom:11px}
+.au-msg.err{background:#fdecea;color:#b3261e;border:1px solid #f5c2bd}
+.au-msg.ok{background:#e6f4ea;color:#1a6b3c;border:1px solid #b9dfc5}
+[data-dark] .au-msg.err{background:#3a1d1b;color:#ffb4ab;border-color:#5c2b27}
+[data-dark] .au-msg.ok{background:#14301f;color:#9be0b4;border-color:#2a4a35}
+.au-lang{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));right:12px;z-index:2;min-width:38px;height:32px;padding:0 10px;border-radius:18px;border:none;background:rgba(255,255,255,.18);color:#fff;font-family:var(--font);font-weight:700;font-size:.8rem;cursor:pointer}
+.au-vem{display:block;word-break:break-all;color:var(--tx);font-size:.86rem;margin-top:3px}
+.au-btns{display:flex;flex-direction:column;gap:9px}
+.au-spin{width:34px;height:34px;border:4px solid var(--bd);border-top-color:var(--pri);border-radius:50%;animation:au-sp .8s linear infinite;margin:6px auto 12px}
+@keyframes au-sp{to{transform:rotate(360deg)}}
+.au-accv{font-size:.86rem;font-weight:600;color:var(--tx);word-break:break-all}
 </style>
 </head>
 <body>
+
+<!-- ═══ AUTH GATE (added) ═══ -->
+<div id="authGate">
+  <button class="au-lang" id="au_lang" onclick="auToggleLang()">EN</button>
+  <div class="au-wrap">
+    <div class="au-brand">
+      <div class="au-logo">🥛</div>
+      <div class="au-name">Dudh Register</div>
+      <div class="au-tag" data-au="tagline"></div>
+    </div>
+    <div class="au-box">
+
+      <!-- loading -->
+      <div class="au-s on" id="au_s_loading" style="text-align:center">
+        <div class="au-spin"></div>
+        <div class="au-sub" data-au="loading"></div>
+      </div>
+
+      <!-- no internet / SDK not loaded -->
+      <div class="au-s" id="au_s_net">
+        <div class="au-h" data-au="net_title"></div>
+        <div class="au-sub" data-au="net_msg"></div>
+        <button class="btn btn-p" onclick="location.reload()" data-au="btn_retry"></button>
+      </div>
+
+      <!-- login -->
+      <div class="au-s" id="au_s_login">
+        <div class="au-h" data-au="login_title"></div>
+        <div class="au-sub" data-au="login_sub"></div>
+        <div class="au-msg" id="au_msg_login"></div>
+        <div class="fg"><label class="fl" data-au="email"></label>
+          <input class="fc" id="lg_email" type="email" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false"></div>
+        <div class="fg"><label class="fl" data-au="password"></label>
+          <div class="au-pw"><input class="fc" id="lg_pass" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')auLogin()"><button type="button" class="au-eye" onclick="auTogglePw('lg_pass',this)">👁</button></div></div>
+        <button class="btn btn-p" id="lg_btn" onclick="auLogin()" data-au="btn_login"></button>
+        <button class="au-link" onclick="auShow('forgot')" data-au="link_forgot"></button>
+        <button class="au-link" onclick="auShow('signup')" data-au="link_to_signup"></button>
+      </div>
+
+      <!-- signup -->
+      <div class="au-s" id="au_s_signup">
+        <div class="au-h" data-au="signup_title"></div>
+        <div class="au-sub" data-au="signup_sub"></div>
+        <div class="au-msg" id="au_msg_signup"></div>
+        <div class="fg"><label class="fl" data-au="owner"></label>
+          <input class="fc" id="su_owner" type="text" maxlength="60" autocomplete="name"></div>
+        <div class="fg"><label class="fl" data-au="dairy"></label>
+          <input class="fc" id="su_dairy" type="text" maxlength="80" autocomplete="organization"></div>
+        <div class="fg"><label class="fl" data-au="email"></label>
+          <input class="fc" id="su_email" type="email" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false"></div>
+        <div class="fg"><label class="fl" data-au="password"></label>
+          <div class="au-pw"><input class="fc" id="su_pass" type="password" autocomplete="new-password"><button type="button" class="au-eye" onclick="auTogglePw('su_pass',this)">👁</button></div></div>
+        <div class="fg"><label class="fl" data-au="confirm"></label>
+          <div class="au-pw"><input class="fc" id="su_pass2" type="password" autocomplete="new-password" onkeydown="if(event.key==='Enter')auSignup()"><button type="button" class="au-eye" onclick="auTogglePw('su_pass2',this)">👁</button></div></div>
+        <button class="btn btn-p" id="su_btn" onclick="auSignup()" data-au="btn_signup"></button>
+        <button class="au-link" onclick="auShow('login')" data-au="link_to_login"></button>
+      </div>
+
+      <!-- forgot password -->
+      <div class="au-s" id="au_s_forgot">
+        <div class="au-h" data-au="forgot_title"></div>
+        <div class="au-sub" data-au="forgot_sub"></div>
+        <div class="au-msg" id="au_msg_forgot"></div>
+        <div class="fg"><label class="fl" data-au="email"></label>
+          <input class="fc" id="fg_email" type="email" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" onkeydown="if(event.key==='Enter')auForgot()"></div>
+        <button class="btn btn-p" id="fg_btn" onclick="auForgot()" data-au="btn_forgot"></button>
+        <button class="au-link" onclick="auShow('login')" data-au="back_login"></button>
+      </div>
+
+      <!-- verify email -->
+      <div class="au-s" id="au_s_verify">
+        <div class="au-h" data-au="verify_title"></div>
+        <div class="au-sub"><span data-au="verify_msg"></span><b class="au-vem" id="vf_email"></b></div>
+        <div class="au-sub" data-au="verify_steps"></div>
+        <div class="au-msg" id="au_msg_verify"></div>
+        <div class="au-btns">
+          <button class="btn btn-p" id="vf_btn" onclick="auCheckVerified()" data-au="btn_verified"></button>
+          <button class="btn btn-o" id="vf_resend" onclick="auResend()"></button>
+        </div>
+        <button class="au-link" onclick="auLogout(true)" data-au="wrong_email"></button>
+      </div>
+
+    </div>
+  </div>
+</div>
 
 <!-- PIN -->
 <div class="pscreen" id="pinScreen">
@@ -501,6 +616,14 @@ html,body{font-family:var(--font);background:var(--bg);color:var(--tx);min-heigh
         <button class="btn btn-o" onclick="document.getElementById('restore_input').click()" id="btn_restore">📥 Restore Backup</button>
         <button class="btn btn-d" onclick="confirmClear()" style="height:44px" id="btn_clearall">🗑️ सारा Data हटाएं</button>
       </div>
+    </div>
+    <div class="card" id="au_acc_card">
+      <div class="ctitle" data-au="acc_title"></div>
+      <div class="si"><div><div class="slb" data-au="acc_email_l"></div><div class="au-accv" id="au_acc_email">—</div></div></div>
+      <div class="si"><div><div class="slb" data-au="acc_owner_l"></div><div class="au-accv" id="au_acc_owner">—</div></div></div>
+      <div class="si"><div><div class="slb" data-au="acc_dairy_l"></div><div class="au-accv" id="au_acc_dairy">—</div></div></div>
+      <div style="font-size:.7rem;color:var(--tx3);margin:10px 0" data-au="acc_note"></div>
+      <button class="btn btn-d" style="height:44px" onclick="auLogout()" data-au="btn_logout"></button>
     </div>
     <div class="card" style="text-align:center">
       <div style="font-size:1.8rem;margin-bottom:5px">🐄</div>
@@ -1321,6 +1444,337 @@ function escAttr(s){return String(s||'').replace(/'/g,'&#39;').replace(/"/g,'&qu
 function td(){return new Date().toISOString().split('T')[0];}
 function dlFile(name,content,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
 function refreshAll(){fillFarmerSelects();renderFarmerList();renderDashboard();renderRecentEntries();applyLang();const r=DB.rate();document.getElementById('ef_rateshow').textContent=r.toFixed(2);document.getElementById('sett_rate').value=r;document.getElementById('pay_rate').value=r;}
+</script>
+
+<script type="module">
+/* ═══════════════════════════════════════════════════════════════
+   DUDH REGISTER — Firebase Auth gate (ADDED BLOCK)
+   • Uses only Firebase Auth + Firestore (Spark free plan)
+   • Never reads-to-modify / writes / deletes any "db_" LocalStorage key
+   • Only reads db_lang (read-only) to match the app language
+   ═══════════════════════════════════════════════════════════════ */
+const FB_VER='12.18.0';
+const BASE='https://www.gstatic.com/firebasejs/'+FB_VER+'/';
+const FB_CFG={
+  apiKey:"AIzaSyAcgEIJsJgmsFEgYS638CrXZMjZ-EI9xJI",
+  authDomain:"dudh-register-dc795.firebaseapp.com",
+  projectId:"dudh-register-dc795",
+  storageBucket:"dudh-register-dc795.firebasestorage.app",
+  messagingSenderId:"14663713137",
+  appId:"1:14663713137:web:09958b8f5fb306e25fb6d0"
+};
+/* Leave '' to auto-use this site's own https address as the email "Continue" link.
+   Or set exactly, e.g. 'https://USERNAME.github.io/dudh-register/' */
+const CONTINUE_URL_OVERRIDE='';
+
+/* ── Texts (Hindi / English) ───────────────────────────────── */
+const AU={
+hi:{
+ tagline:'दूध डेयरी प्रबंधन',loading:'जाँच हो रही है…',
+ net_title:'इंटरनेट चाहिए',net_msg:'लॉगिन सिस्टम लोड नहीं हो पाया। इंटरनेट जाँचें और दोबारा कोशिश करें।',btn_retry:'🔄 दोबारा कोशिश करें',
+ login_title:'लॉगिन',login_sub:'अपने खाते में प्रवेश करें',
+ email:'ईमेल',password:'पासवर्ड',confirm:'पासवर्ड दोबारा डालें',owner:'मालिक का नाम',dairy:'डेयरी का नाम',
+ btn_login:'लॉगिन करें',btn_signup:'खाता बनाएं',link_forgot:'पासवर्ड भूल गए?',link_to_signup:'नया खाता बनाएं',link_to_login:'पहले से खाता है? लॉगिन करें',
+ signup_title:'नया खाता बनाएं',signup_sub:'पासवर्ड कम से कम 8 अक्षर का रखें। खाता बनने पर आपके ईमेल पर वेरिफिकेशन लिंक आएगा।',
+ forgot_title:'पासवर्ड रीसेट',forgot_sub:'अपना ईमेल डालें, हम पासवर्ड रीसेट लिंक भेजेंगे।',btn_forgot:'रीसेट लिंक भेजें',back_login:'← लॉगिन पर वापस',
+ verify_title:'ईमेल वेरिफाई करें',verify_msg:'हमने इस ईमेल पर वेरिफिकेशन लिंक भेजा है: ',
+ verify_steps:'ईमेल खोलकर लिंक दबाएं, फिर यहाँ वापस आकर नीचे बटन दबाएं। ईमेल न मिले तो Spam / Junk फोल्डर भी देखें।',
+ btn_verified:'✅ मैंने वेरिफाई कर लिया',btn_resend:'ईमेल दोबारा भेजें',resend_wait:'दोबारा भेजें ({s} सेकंड)',wrong_email:'गलत ईमेल? लॉगआउट करें',
+ e_fill:'सभी जानकारी भरें',e_email:'सही ईमेल डालें',e_pass_len:'पासवर्ड कम से कम 8 अक्षर का होना चाहिए',e_pass_match:'दोनों पासवर्ड एक जैसे नहीं हैं',
+ e_exists:'इस ईमेल से खाता पहले से है। लॉगिन करें।',e_cred:'ईमेल या पासवर्ड गलत है',e_many:'बहुत ज्यादा कोशिशें हो गईं। थोड़ी देर बाद फिर करें।',
+ e_net:'इंटरनेट की समस्या है। दोबारा कोशिश करें।',e_disabled:'यह खाता बंद कर दिया गया है',e_gen:'कुछ गलत हो गया। दोबारा कोशिश करें।',
+ e_notyet:'ईमेल अभी वेरिफाई नहीं हुआ। ईमेल का लिंक दबाने के बाद फिर कोशिश करें।',
+ ok_sent:'वेरिफिकेशन ईमेल भेज दिया गया है। Spam फोल्डर भी देखें।',e_sendfail:'खाता बन गया, पर ईमेल नहीं जा पाया। नीचे "ईमेल दोबारा भेजें" दबाएं।',
+ ok_reset:'अगर यह ईमेल रजिस्टर्ड है, तो रीसेट लिंक भेज दिया गया है। Spam फोल्डर भी देखें।',
+ acc_title:'👤 खाता',acc_email_l:'ईमेल',acc_owner_l:'मालिक का नाम',acc_dairy_l:'डेयरी का नाम',
+ acc_note:'लॉगआउट करने पर आपका डेयरी Data इस फोन से डिलीट नहीं होता।',btn_logout:'🚪 लॉगआउट',confirm_logout:'लॉगआउट करें?'
+},
+en:{
+ tagline:'Milk Dairy Management',loading:'Checking…',
+ net_title:'Internet required',net_msg:'The login system could not load. Check your internet and try again.',btn_retry:'🔄 Try again',
+ login_title:'Login',login_sub:'Sign in to your account',
+ email:'Email',password:'Password',confirm:'Confirm Password',owner:'Owner Name',dairy:'Dairy Name',
+ btn_login:'Login',btn_signup:'Create Account',link_forgot:'Forgot password?',link_to_signup:'Create new account',link_to_login:'Already have an account? Login',
+ signup_title:'Create Account',signup_sub:'Use at least 8 characters for the password. A verification link will be emailed to you.',
+ forgot_title:'Reset Password',forgot_sub:'Enter your email and we will send a password reset link.',btn_forgot:'Send Reset Link',back_login:'← Back to Login',
+ verify_title:'Verify your email',verify_msg:'We sent a verification link to: ',
+ verify_steps:'Open the email and tap the link, then come back here and tap the button below. If you cannot find it, check Spam / Junk.',
+ btn_verified:"✅ I've verified",btn_resend:'Resend email',resend_wait:'Resend in {s}s',wrong_email:'Wrong email? Logout',
+ e_fill:'Please fill in all fields',e_email:'Enter a valid email',e_pass_len:'Password must be at least 8 characters',e_pass_match:'Passwords do not match',
+ e_exists:'An account with this email already exists. Please login.',e_cred:'Wrong email or password',e_many:'Too many attempts. Try again later.',
+ e_net:'Network problem. Please try again.',e_disabled:'This account has been disabled',e_gen:'Something went wrong. Please try again.',
+ e_notyet:'Email is not verified yet. Tap the link in the email, then try again.',
+ ok_sent:'Verification email sent. Check Spam too.',e_sendfail:'Account created, but the email could not be sent. Tap "Resend email" below.',
+ ok_reset:'If this email is registered, a reset link has been sent. Check Spam too.',
+ acc_title:'👤 Account',acc_email_l:'Email',acc_owner_l:'Owner Name',acc_dairy_l:'Dairy Name',
+ acc_note:'Logging out does not delete your dairy data from this phone.',btn_logout:'🚪 Logout',confirm_logout:'Logout?'
+}};
+
+/* ── Small helpers ─────────────────────────────────────────── */
+const $=id=>document.getElementById(id);
+let auL='hi';
+try{auL=JSON.parse(localStorage.getItem('db_lang')||'null')||'hi';}catch(e){}   /* read-only */
+if(auL!=='en')auL='hi';
+function AUT(k,v){let s=(AU[auL]&&AU[auL][k])||AU.hi[k]||k;if(v)for(const x in v)s=s.replace('{'+x+'}',v[x]);return s;}
+const emailOk=s=>/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s);
+const wt=(p,ms)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej({code:'auth/network-request-failed'}),ms))]);
+function busy(id,on){const b=$(id);if(b)b.disabled=!!on;}
+function msg(id,text,kind){const e=$(id);if(!e)return;e.textContent=text||'';e.className='au-msg '+(kind||'err');e.style.display=text?'block':'none';}
+function clearMsgs(){['login','signup','forgot','verify'].forEach(n=>msg('au_msg_'+n,''));}
+function errText(e){
+  const c=(e&&e.code)||'';
+  if(c==='auth/email-already-in-use')return AUT('e_exists');
+  if(c==='auth/invalid-email')return AUT('e_email');
+  if(c==='auth/weak-password')return AUT('e_pass_len');
+  if(['auth/invalid-credential','auth/wrong-password','auth/user-not-found','auth/invalid-login-credentials'].includes(c))return AUT('e_cred');
+  if(c==='auth/too-many-requests')return AUT('e_many');
+  if(c==='auth/network-request-failed')return AUT('e_net');
+  if(c==='auth/user-disabled')return AUT('e_disabled');
+  return AUT('e_gen');
+}
+const isBadUser=e=>!!e&&['auth/user-token-expired','auth/user-not-found','auth/user-disabled','auth/invalid-user-token'].includes(e.code);
+function continueUrl(){
+  if(CONTINUE_URL_OVERRIDE)return CONTINUE_URL_OVERRIDE;
+  if(location.protocol==='https:')return location.origin+location.pathname;
+  return undefined;
+}
+
+/* ── State ─────────────────────────────────────────────────── */
+let fb=null,A=null,ready=false,suppress=false,curScreen='loading',fsP=null;
+let cdTimer=null,cdLeft=0,autoBusy=false;
+
+/* ── Screens / gate ────────────────────────────────────────── */
+function show(n){
+  document.querySelectorAll('#authGate .au-s').forEach(e=>e.classList.remove('on'));
+  const s=$('au_s_'+n);if(s)s.classList.add('on');
+  curScreen=n;clearMsgs();
+}
+function gateOpen(){$('authGate').classList.remove('off');}
+function gateClose(){$('authGate').classList.add('off');}
+function auApply(){
+  document.querySelectorAll('[data-au]').forEach(e=>{e.textContent=AUT(e.dataset.au);});
+  $('au_lang').textContent=auL==='hi'?'EN':'हि';
+  tickCd();
+}
+function renderAccount(u,p){
+  $('au_acc_email').textContent=(u&&u.email)||'—';
+  $('au_acc_owner').textContent=(p&&p.ownerName)||(u&&u.displayName)||'—';
+  $('au_acc_dairy').textContent=(p&&p.dairyName)||'—';
+}
+
+/* ── Resend cooldown (60 s) ────────────────────────────────── */
+function tickCd(){
+  const b=$('vf_resend');if(!b)return;
+  if(cdLeft>0){b.disabled=true;b.textContent=AUT('resend_wait',{s:cdLeft});}
+  else{b.disabled=false;b.textContent=AUT('btn_resend');}
+}
+function startCooldown(s){
+  clearInterval(cdTimer);cdLeft=s;tickCd();
+  cdTimer=setInterval(()=>{cdLeft--;tickCd();if(cdLeft<=0)clearInterval(cdTimer);},1000);
+}
+
+/* ── Firestore (lazy-loaded, only for the profile document) ── */
+function getFs(){
+  if(!fsP){fsP=import(BASE+'firebase-firestore.js').then(m=>({m,db:m.getFirestore(fb.app)})).catch(e=>{fsP=null;throw e;});}
+  return fsP;
+}
+async function saveProfile(u,owner,dairy){
+  try{
+    const F=await getFs();
+    await F.m.setDoc(F.m.doc(F.db,'users',u.uid),{ownerName:owner,dairyName:dairy,email:u.email,createdAt:F.m.serverTimestamp()});
+    return true;
+  }catch(e){return false;}
+}
+async function loadProfile(u){
+  try{
+    const F=await getFs();
+    const ref=F.m.doc(F.db,'users',u.uid);
+    let snap=await F.m.getDoc(ref);
+    const pk='au_pending_'+u.uid;
+    if(!snap.exists()){
+      let p=null;try{p=JSON.parse(localStorage.getItem(pk)||'null');}catch(e){}
+      if(p&&p.ownerName&&p.dairyName){
+        await F.m.setDoc(ref,{ownerName:p.ownerName,dairyName:p.dairyName,email:u.email,createdAt:F.m.serverTimestamp()});
+        localStorage.removeItem(pk);
+        snap=await F.m.getDoc(ref);
+      }
+    }else{try{localStorage.removeItem(pk);}catch(e){}}
+    return snap.exists()?snap.data():null;
+  }catch(e){return null;}
+}
+
+/* ── Email sending (verification / reset) ──────────────────── */
+async function withContinue(fn){
+  const cu=continueUrl();
+  if(!cu)return fn(undefined);
+  try{return await fn({url:cu});}
+  catch(e){
+    if(e&&['auth/unauthorized-continue-uri','auth/invalid-continue-uri','auth/missing-continue-uri'].includes(e.code))return fn(undefined);
+    throw e;
+  }
+}
+async function sendVerify(u){
+  fb.auth.languageCode=auL==='en'?'en':'hi';
+  await withContinue(s=>s?A.sendEmailVerification(u,s):A.sendEmailVerification(u));
+  startCooldown(60);
+}
+
+/* ── Routing: decide which screen to show ──────────────────── */
+function showVerify(u){
+  $('vf_email').textContent=u.email||'';
+  gateOpen();show('verify');tickCd();
+}
+async function unlock(u){
+  ['lg_email','lg_pass','su_owner','su_dairy','su_email','su_pass','su_pass2','fg_email'].forEach(id=>{const e=$(id);if(e)e.value='';});
+  renderAccount(u,null);
+  gateClose();
+  loadProfile(u).then(p=>{if(fb&&fb.auth.currentUser&&fb.auth.currentUser.uid===u.uid)renderAccount(u,p);});
+}
+async function routeUser(u){
+  if(!u){
+    renderAccount(null,null);gateOpen();
+    if(curScreen!=='signup'&&curScreen!=='forgot')show('login');
+    return;
+  }
+  gateOpen();
+  let verified=u.emailVerified;
+  try{
+    /* reload user + refresh ID token before trusting the verified status */
+    await wt(u.reload(),8000);
+    await wt(fb.auth.currentUser.getIdToken(true),8000);
+    verified=!!(fb.auth.currentUser&&fb.auth.currentUser.emailVerified);
+  }catch(e){
+    if(isBadUser(e)){try{await A.signOut(fb.auth);}catch(_){}return;}
+    /* offline: fall back to Firebase's own persisted user state (no custom flag) */
+    verified=!!u.emailVerified;
+  }
+  const cu=fb.auth.currentUser;if(!cu)return;
+  if(verified)await unlock(cu);else showVerify(cu);
+}
+
+/* ── Actions ───────────────────────────────────────────────── */
+function auShow(n){
+  if(n==='forgot'&&$('lg_email').value&&!$('fg_email').value)$('fg_email').value=$('lg_email').value;
+  gateOpen();show(n);
+}
+function auToggleLang(){auL=auL==='hi'?'en':'hi';auApply();clearMsgs();}
+function auTogglePw(id,btn){const i=$(id);const t=i.type==='password';i.type=t?'text':'password';btn.textContent=t?'🙈':'👁';}
+
+async function auLogin(){
+  const email=$('lg_email').value.trim(),pass=$('lg_pass').value;
+  if(!email||!pass){msg('au_msg_login',AUT('e_fill'));return;}
+  if(!emailOk(email)){msg('au_msg_login',AUT('e_email'));return;}
+  msg('au_msg_login','');busy('lg_btn',true);suppress=true;
+  try{
+    const c=await A.signInWithEmailAndPassword(fb.auth,email,pass);
+    $('lg_pass').value='';suppress=false;
+    await routeUser(c.user);
+  }catch(e){msg('au_msg_login',errText(e));}
+  finally{suppress=false;busy('lg_btn',false);}
+}
+
+async function auSignup(){
+  const owner=$('su_owner').value.trim(),dairy=$('su_dairy').value.trim(),email=$('su_email').value.trim();
+  const p1=$('su_pass').value,p2=$('su_pass2').value;
+  if(!owner||!dairy||!email||!p1||!p2){msg('au_msg_signup',AUT('e_fill'));return;}
+  if(!emailOk(email)){msg('au_msg_signup',AUT('e_email'));return;}
+  if(p1.length<8){msg('au_msg_signup',AUT('e_pass_len'));return;}
+  if(p1!==p2){msg('au_msg_signup',AUT('e_pass_match'));return;}
+  msg('au_msg_signup','');busy('su_btn',true);suppress=true;
+  try{
+    const cred=await A.createUserWithEmailAndPassword(fb.auth,email,p1);
+    const u=cred.user;
+    try{await A.updateProfile(u,{displayName:owner});}catch(e){}
+    const saved=await saveProfile(u,owner,dairy);
+    if(!saved){try{localStorage.setItem('au_pending_'+u.uid,JSON.stringify({ownerName:owner,dairyName:dairy}));}catch(e){}}
+    let sent=true;
+    try{await sendVerify(u);}catch(e){sent=false;}
+    $('su_pass').value='';$('su_pass2').value='';
+    suppress=false;
+    showVerify(fb.auth.currentUser||u);
+    msg('au_msg_verify',sent?AUT('ok_sent'):AUT('e_sendfail'),sent?'ok':'err');
+  }catch(e){msg('au_msg_signup',errText(e));}
+  finally{suppress=false;busy('su_btn',false);}
+}
+
+async function auForgot(){
+  const email=$('fg_email').value.trim();
+  if(!email){msg('au_msg_forgot',AUT('e_fill'));return;}
+  if(!emailOk(email)){msg('au_msg_forgot',AUT('e_email'));return;}
+  msg('au_msg_forgot','');busy('fg_btn',true);
+  try{
+    fb.auth.languageCode=auL==='en'?'en':'hi';
+    await withContinue(s=>s?A.sendPasswordResetEmail(fb.auth,email,s):A.sendPasswordResetEmail(fb.auth,email));
+    msg('au_msg_forgot',AUT('ok_reset'),'ok');
+  }catch(e){
+    if(e&&e.code==='auth/user-not-found')msg('au_msg_forgot',AUT('ok_reset'),'ok');   /* never reveal if email exists */
+    else msg('au_msg_forgot',errText(e));
+  }finally{busy('fg_btn',false);}
+}
+
+async function auResend(){
+  const u=fb&&fb.auth.currentUser;if(!u||cdLeft>0)return;
+  busy('vf_resend',true);msg('au_msg_verify','');
+  try{await sendVerify(u);msg('au_msg_verify',AUT('ok_sent'),'ok');}
+  catch(e){msg('au_msg_verify',errText(e));tickCd();}
+}
+
+/* Strict check used by the "I've verified" button: reload user, refresh ID token, then unlock */
+async function checkVerified(silent){
+  const u=fb&&fb.auth.currentUser;if(!u){show('login');return;}
+  if(!silent){busy('vf_btn',true);msg('au_msg_verify','');}
+  try{
+    await wt(u.reload(),10000);
+    await wt(fb.auth.currentUser.getIdToken(true),10000);
+    const cu=fb.auth.currentUser;
+    if(cu&&cu.emailVerified)await unlock(cu);
+    else if(!silent)msg('au_msg_verify',AUT('e_notyet'));
+  }catch(e){
+    if(isBadUser(e)){try{await A.signOut(fb.auth);}catch(_){}}
+    else if(!silent)msg('au_msg_verify',errText(e));
+  }finally{if(!silent)busy('vf_btn',false);}
+}
+function auCheckVerified(){return checkVerified(false);}
+
+async function auLogout(fromGate){
+  if(fromGate!==true&&!confirm(AUT('confirm_logout')))return;
+  try{await A.signOut(fb.auth);}catch(e){}
+  clearInterval(cdTimer);cdLeft=0;
+  renderAccount(null,null);
+  gateOpen();show('login');
+  if(typeof go==='function'){try{go('home');}catch(e){}}   /* existing app function; LocalStorage is NOT touched */
+}
+
+/* expose handlers used by inline onclick attributes */
+Object.assign(window,{auShow,auToggleLang,auTogglePw,auLogin,auSignup,auForgot,auResend,auCheckVerified,auLogout});
+
+/* ── Follow the app's own language switch (no change to existing code) ── */
+new MutationObserver(()=>{
+  const l=document.documentElement.lang==='en'?'en':'hi';
+  if(l!==auL){auL=l;auApply();}
+}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+
+/* ── When user comes back from the email app, re-check automatically ── */
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&curScreen==='verify'&&fb&&fb.auth.currentUser&&!autoBusy){
+    autoBusy=true;checkVerified(true).finally(()=>{autoBusy=false;});
+  }
+});
+
+/* ── Boot ──────────────────────────────────────────────────── */
+auApply();
+const bootTimer=setTimeout(()=>{if(!ready)show('net');},12000);
+(async()=>{
+  try{
+    const [appM,authM]=await Promise.all([import(BASE+'firebase-app.js'),import(BASE+'firebase-auth.js')]);
+    A=authM;
+    const app=appM.initializeApp(FB_CFG);
+    /* persistent login: IndexedDB first, localStorage as fallback */
+    const auth=A.initializeAuth(app,{persistence:[A.indexedDBLocalPersistence,A.browserLocalPersistence]});
+    fb={app,auth};
+    A.onAuthStateChanged(auth,u=>{ready=true;clearTimeout(bootTimer);if(suppress)return;routeUser(u);});
+  }catch(e){clearTimeout(bootTimer);show('net');}
+})();
 </script>
 </body>
 </html>

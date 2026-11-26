@@ -220,6 +220,11 @@ html,body{font-family:var(--font);background:var(--bg);color:var(--tx);min-heigh
 .au-spin{width:34px;height:34px;border:4px solid var(--bd);border-top-color:var(--pri);border-radius:50%;animation:au-sp .8s linear infinite;margin:6px auto 12px}
 @keyframes au-sp{to{transform:rotate(360deg)}}
 .au-accv{font-size:.86rem;font-weight:600;color:var(--tx);word-break:break-all}
+/* ═══ SYNC UI (added) ═══ */
+.au-ov{position:fixed;inset:0;z-index:580;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:16px}
+.au-ov.on{display:flex}
+.au-ovbox{width:100%;max-width:380px;max-height:90vh;overflow-y:auto;background:var(--card);border-radius:var(--r);padding:18px 16px;border:1.5px solid var(--bd);box-shadow:0 8px 28px rgba(0,0,0,.3)}
+.au-sync{font-size:.74rem;color:var(--tx2);margin:0 0 10px;white-space:pre-line;line-height:1.5}
 </style>
 </head>
 <body>
@@ -305,6 +310,18 @@ html,body{font-family:var(--font);background:var(--bg);color:var(--tx);min-heigh
         <button class="au-link" onclick="auLogout(true)" data-au="wrong_email"></button>
       </div>
 
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SYNC DIALOG (added) ═══ -->
+<div class="au-ov" id="au_dlg">
+  <div class="au-ovbox">
+    <div class="au-h" id="au_dt"></div>
+    <div class="au-sub" id="au_db" style="white-space:pre-line"></div>
+    <div class="au-btns">
+      <button class="btn btn-p" id="au_d1" onclick="auDlg(1)"></button>
+      <button class="btn btn-o" id="au_d2" onclick="auDlg(2)"></button>
     </div>
   </div>
 </div>
@@ -623,6 +640,10 @@ html,body{font-family:var(--font);background:var(--bg);color:var(--tx);min-heigh
       <div class="si"><div><div class="slb" data-au="acc_owner_l"></div><div class="au-accv" id="au_acc_owner">—</div></div></div>
       <div class="si"><div><div class="slb" data-au="acc_dairy_l"></div><div class="au-accv" id="au_acc_dairy">—</div></div></div>
       <div style="font-size:.7rem;color:var(--tx3);margin:10px 0" data-au="acc_note"></div>
+      <div class="au-sync" id="au_sync_status"></div>
+      <div class="au-btns" style="margin-bottom:10px">
+        <button class="btn btn-o" style="height:42px" onclick="auSyncNow()" data-au="btn_sync"></button>
+      </div>
       <button class="btn btn-d" style="height:44px" onclick="auLogout()" data-au="btn_logout"></button>
     </div>
     <div class="card" style="text-align:center">
@@ -834,8 +855,13 @@ function toggleLang(){L=L==='hi'?'en':'hi';DB.set('lang',L);applyLang();refreshA
 
 /* ── DB ─────────────────────────────────── */
 const DB={
-  _g:k=>{try{return JSON.parse(localStorage.getItem('db_'+k)||'null');}catch{return null;}},
-  _s:(k,v)=>localStorage.setItem('db_'+k,JSON.stringify(v)),
+  /* Per-account data (cloud-synced) lives under u_<uid>_<key>; device settings (theme, lang, PIN, printer) stay in db_<key> */
+  _dk:['farmers','entries','rate','autoDelete'],
+  _key:k=>DB._dk.includes(k)?(window.__dbUser?'u_'+window.__dbUser+'_'+k:null):'db_'+k,
+  _g:k=>{try{const kk=DB._key(k);return kk?JSON.parse(localStorage.getItem(kk)||'null'):null;}catch{return null;}},
+  _s:(k,v)=>{const kk=DB._key(k);if(!kk)return;
+    if(DB._dk.includes(k)&&window.__syncHook){try{const nv=window.__syncHook(k,DB._g(k),v);if(nv!==undefined)v=nv;}catch(e){console.error('syncHook',e);}}
+    localStorage.setItem(kk,JSON.stringify(v));},
   farmers:()=>DB._g('farmers')||[],
   entries:()=>DB._g('entries')||[],
   rate:()=>parseFloat(DB._g('rate'))||9.5,
@@ -1432,7 +1458,7 @@ function doRestore(ev){
   reader.onload=e=>{try{const d=JSON.parse(e.target.result);if(!d.farmers||!d.entries)throw 0;DB.set('farmers',d.farmers);DB.set('entries',d.entries);if(d.rate)DB.set('rate',d.rate);if(d.autoDelete)DB.set('autoDelete',d.autoDelete);refreshAll();toast(T('ok_restore')+' Farmers:'+d.farmers.length);}catch{toast(T('err_backup'));}};
   reader.readAsText(file);
 }
-function confirmClear(){if(!confirm(T('clear_confirm1')))return;if(!confirm(T('clear_confirm2')))return;['farmers','entries'].forEach(k=>localStorage.removeItem('db_'+k));refreshAll();toast(T('ok_clear'));}
+function confirmClear(){if(!confirm(T('clear_confirm1')))return;if(!confirm(T('clear_confirm2')))return;['farmers','entries'].forEach(k=>DB.set(k,[]));refreshAll();toast(T('ok_clear'));}
 
 /* ── UTILS ──────────────────────────────── */
 function openModal(id){document.getElementById(id).classList.add('on');}
@@ -1487,7 +1513,19 @@ hi:{
  ok_sent:'वेरिफिकेशन ईमेल भेज दिया गया है। Spam फोल्डर भी देखें।',e_sendfail:'खाता बन गया, पर ईमेल नहीं जा पाया। नीचे "ईमेल दोबारा भेजें" दबाएं।',
  ok_reset:'अगर यह ईमेल रजिस्टर्ड है, तो रीसेट लिंक भेज दिया गया है। Spam फोल्डर भी देखें।',
  acc_title:'👤 खाता',acc_email_l:'ईमेल',acc_owner_l:'मालिक का नाम',acc_dairy_l:'डेयरी का नाम',
- acc_note:'लॉगआउट करने पर आपका डेयरी Data इस फोन से डिलीट नहीं होता।',btn_logout:'🚪 लॉगआउट',confirm_logout:'लॉगआउट करें?'
+ acc_note:'लॉगआउट करने पर आपका Data फोन या cloud से डिलीट नहीं होता।',btn_logout:'🚪 लॉगआउट',confirm_logout:'लॉगआउट करें?',
+ sy_syncing:'🔄 Sync हो रहा है…',sy_ok:'✅ Cloud के साथ Synced ({t})',sy_pending:'⏳ {n} बदलाव sync होने बाकी हैं',
+ sy_offline:'📴 Offline — {n} बदलाव इंटरनेट आने पर sync होंगे',sy_offline0:'📴 Offline — इंटरनेट आने पर sync होगा',
+ sy_conf:'⚠️ {n} conflict — हल करना बाकी है',sy_perm:'❌ Cloud permission error — Firestore rules जाँचें',
+ sy_quota:'⏳ Cloud की रोज़ की free limit पूरी हो गई, बाद में sync होगा',sy_err:'❌ Sync में दिक्कत आई, दोबारा कोशिश करें',
+ sy_skipped:'ℹ️ {n} entry में गलत values थीं, वे सिर्फ इस फोन में रहेंगी',btn_sync:'🔄 अभी Sync करें',btn_legacy:'📥 इस फोन का पुराना Data जोड़ें',
+ confirm_pending:'{n} बदलाव अभी cloud में नहीं पहुँचे। लॉगआउट करने पर वे इस फोन में सुरक्षित रहेंगे और इसी account से दोबारा लॉगिन करने पर sync होंगे। फिर भी लॉगआउट करें?',
+ conf_title:'⚠️ Sync conflict',
+ conf_f_body:'किसान "{name}" दूसरे device पर भी बदला गया है।\n\n☁️ Cloud: {remote}\n📱 इस device पर: {local}\n\nकौन सा रखें?',
+ conf_s_body:'Rate / Auto-delete setting दूसरे device पर भी बदली गई है।\n\n☁️ Cloud: {remote}\n📱 इस device पर: {local}\n\nकौन सा रखें?',
+ conf_keep_cloud:'☁️ Cloud वाला रखें',conf_keep_mine:'📱 इस device वाला रखें',conf_deleted:'हटाया गया',
+ leg_title:'📥 पुराना Data मिला',leg_body:'इस फोन में login से पहले का Data है ({f} किसान, {e} entries)। क्या इसे इस account में जोड़कर cloud पर upload करें?\n\nयह पुराना Data सिर्फ एक account में जोड़ा जा सकता है। फोन से कुछ delete नहीं होगा।',
+ leg_yes:'✅ हाँ, जोड़ें',leg_later:'अभी नहीं',ok_legacy:'पुराना Data जोड़ दिया गया'
 },
 en:{
  tagline:'Milk Dairy Management',loading:'Checking…',
@@ -1507,7 +1545,19 @@ en:{
  ok_sent:'Verification email sent. Check Spam too.',e_sendfail:'Account created, but the email could not be sent. Tap "Resend email" below.',
  ok_reset:'If this email is registered, a reset link has been sent. Check Spam too.',
  acc_title:'👤 Account',acc_email_l:'Email',acc_owner_l:'Owner Name',acc_dairy_l:'Dairy Name',
- acc_note:'Logging out does not delete your dairy data from this phone.',btn_logout:'🚪 Logout',confirm_logout:'Logout?'
+ acc_note:'Logging out does not delete your data from this phone or the cloud.',btn_logout:'🚪 Logout',confirm_logout:'Logout?',
+ sy_syncing:'🔄 Syncing…',sy_ok:'✅ Synced with cloud ({t})',sy_pending:'⏳ {n} changes waiting to sync',
+ sy_offline:'📴 Offline — {n} changes will sync when you are online',sy_offline0:'📴 Offline — will sync when online',
+ sy_conf:'⚠️ {n} conflict(s) — please resolve',sy_perm:'❌ Cloud permission error — check Firestore rules',
+ sy_quota:'⏳ Daily free cloud limit reached, will sync later',sy_err:'❌ Sync problem, please try again',
+ sy_skipped:'ℹ️ {n} entries had invalid values and stay on this phone only',btn_sync:'🔄 Sync now',btn_legacy:'📥 Add this phone\'s old data',
+ confirm_pending:'{n} changes have not reached the cloud yet. If you logout they stay safe on this phone and sync when you login again with this account. Logout anyway?',
+ conf_title:'⚠️ Sync conflict',
+ conf_f_body:'Farmer "{name}" was also changed on another device.\n\n☁️ Cloud: {remote}\n📱 This device: {local}\n\nWhich one to keep?',
+ conf_s_body:'Rate / Auto-delete setting was also changed on another device.\n\n☁️ Cloud: {remote}\n📱 This device: {local}\n\nWhich one to keep?',
+ conf_keep_cloud:'☁️ Keep cloud version',conf_keep_mine:'📱 Keep this device\'s version',conf_deleted:'Deleted',
+ leg_title:'📥 Old data found',leg_body:'This phone has data saved before accounts existed ({f} farmers, {e} entries). Add it to this account and upload to the cloud?\n\nThis old data can be added to only ONE account. Nothing is deleted from the phone.',
+ leg_yes:'✅ Yes, add it',leg_later:'Not now',ok_legacy:'Old data added'
 }};
 
 /* ── Small helpers ─────────────────────────────────────────── */
@@ -1515,7 +1565,7 @@ const $=id=>document.getElementById(id);
 let auL='hi';
 try{auL=JSON.parse(localStorage.getItem('db_lang')||'null')||'hi';}catch(e){}   /* read-only */
 if(auL!=='en')auL='hi';
-function AUT(k,v){let s=(AU[auL]&&AU[auL][k])||AU.hi[k]||k;if(v)for(const x in v)s=s.replace('{'+x+'}',v[x]);return s;}
+function AUT(k,v){let s=(AU[auL]&&AU[auL][k])||AU.hi[k]||k;if(v)for(const x in v)s=s.split('{'+x+'}').join(String(v[x]));return s;}
 const emailOk=s=>/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s);
 const wt=(p,ms)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej({code:'auth/network-request-failed'}),ms))]);
 function busy(id,on){const b=$(id);if(b)b.disabled=!!on;}
@@ -1555,6 +1605,7 @@ function auApply(){
   document.querySelectorAll('[data-au]').forEach(e=>{e.textContent=AUT(e.dataset.au);});
   $('au_lang').textContent=auL==='hi'?'EN':'हि';
   tickCd();
+  try{setStatus();}catch(e){}
 }
 function renderAccount(u,p){
   $('au_acc_email').textContent=(u&&u.email)||'—';
@@ -1627,11 +1678,13 @@ function showVerify(u){
 async function unlock(u){
   ['lg_email','lg_pass','su_owner','su_dairy','su_email','su_pass','su_pass2','fg_email'].forEach(id=>{const e=$(id);if(e)e.value='';});
   renderAccount(u,null);
+  startSession(u);
   gateClose();
   loadProfile(u).then(p=>{if(fb&&fb.auth.currentUser&&fb.auth.currentUser.uid===u.uid)renderAccount(u,p);});
 }
 async function routeUser(u){
   if(!u){
+    if(SY.active){endSession();location.reload();return;}
     renderAccount(null,null);gateOpen();
     if(curScreen!=='signup'&&curScreen!=='forgot')show('login');
     return;
@@ -1737,16 +1790,24 @@ async function checkVerified(silent){
 function auCheckVerified(){return checkVerified(false);}
 
 async function auLogout(fromGate){
-  if(fromGate!==true&&!confirm(AUT('confirm_logout')))return;
+  const wasActive=SY.active;
+  if(fromGate!==true){
+    if(!confirm(AUT('confirm_logout')))return;
+    if(wasActive&&pendingCount()>0){
+      await trySyncBeforeLogout();
+      if(pendingCount()>0&&!confirm(AUT('confirm_pending',{n:pendingCount()})))return;
+    }
+  }
+  endSession();                                           /* local + cloud data are NOT deleted */
   try{await A.signOut(fb.auth);}catch(e){}
+  if(wasActive){location.reload();return;}                /* clean page, no leftover data on screen */
   clearInterval(cdTimer);cdLeft=0;
   renderAccount(null,null);
   gateOpen();show('login');
-  if(typeof go==='function'){try{go('home');}catch(e){}}   /* existing app function; LocalStorage is NOT touched */
 }
 
 /* expose handlers used by inline onclick attributes */
-Object.assign(window,{auShow,auToggleLang,auTogglePw,auLogin,auSignup,auForgot,auResend,auCheckVerified,auLogout});
+Object.assign(window,{auSyncNow,auDlg,auShow,auToggleLang,auTogglePw,auLogin,auSignup,auForgot,auResend,auCheckVerified,auLogout});
 
 /* ── Follow the app's own language switch (no change to existing code) ── */
 new MutationObserver(()=>{
@@ -1760,6 +1821,474 @@ document.addEventListener('visibilitychange',()=>{
     autoBusy=true;checkVerified(true).finally(()=>{autoBusy=false;});
   }
 });
+
+/*SYNC-BEGIN*/
+/* ═══════════════════════════════════════════════════════════════
+   CLOUD SYNC ENGINE (Firestore · Spark plan · no Cloud Functions)
+   Data lives per account under  users/{uid}/farmers | entries | meta/settings
+   Local cache  = LocalStorage keys  u_<uid>_farmers / _entries / _rate / _autoDelete
+   Offline edits wait in an outbox (u_<uid>__outbox) and are pushed when online.
+   Farmers / settings use revision numbers: a clash is NEVER silently overwritten,
+   the user is asked which version to keep.
+   ═══════════════════════════════════════════════════════════════ */
+const SY={uid:null,active:false,timer:null,deb:null,running:false,rerun:false,deferPull:false,confBusy:false,
+  lastVis:0,lastOk:0,err:'',skipped:0,noDel:false,archiveFailed:false,tabId:Math.random().toString(36).slice(2)};
+
+/* ── raw per-account storage helpers (bypass the DB hook) ── */
+const pfx=()=>'u_'+SY.uid+'_';
+function rawGet(k){try{const v=localStorage.getItem(pfx()+k);return v?JSON.parse(v):null;}catch(e){return null;}}
+function rawSet(k,v){localStorage.setItem(pfx()+k,JSON.stringify(v));}
+function lsGet(k,d){const v=rawGet(k);return v==null?d:v;}
+const lsSet=rawSet;
+
+/* ── identity + conversion helpers ── */
+const keyOf=f=>'f'+f.createdAt;                         /* stable farmer key */
+const sidOf=e=>(e&&(e._sid||e.receiptId))||'';           /* stable entry key  */
+const nz=x=>{const n=typeof x==='number'?x:parseFloat(x);return isFinite(n)?n:NaN;};
+const clip=(s,n)=>String(s==null?'':s).slice(0,n);
+const sameF=(a,b)=>clip(a.name,200)===clip(b.name,200)&&clip(a.phone,50)===clip(b.phone,50)&&clip(a.fid,80)===clip(b.fid,80);
+function farmerDoc(f){return{name:clip(f.name,200),phone:clip(f.phone,50),fid:clip(f.fid,80),createdAt:f.createdAt};}
+function entryValid(e){
+  const id=sidOf(e);
+  return !!id&&id.length<=100&&id.indexOf('/')<0&&id!=='.'&&id!=='..'&&
+    nz(e.milk)>0&&nz(e.milk)<100000&&nz(e.fat)>0&&nz(e.fat)<=100&&nz(e.rate)>=0&&nz(e.rate)<100000&&
+    isFinite(nz(e.amount))&&typeof e.date==='string'&&e.date.length>0;
+}
+function entryDoc(e){
+  return{sid:sidOf(e),receiptId:clip(e.receiptId,60),farmerKey:clip(e.fk,40),farmerName:clip(e.farmerName,200),
+    farmerPhone:clip(e.farmerPhone,50),farmerFid:clip(e.farmerFid,80),milk:nz(e.milk),fat:nz(e.fat),rate:nz(e.rate),
+    amount:nz(e.amount),date:clip(e.date,40),dateStr:clip(e.dateStr,30),timeStr:clip(e.timeStr,20)};
+}
+function entryFromDoc(id,d){
+  const e={farmerIdx:-1,farmerName:d.farmerName,farmerPhone:d.farmerPhone,farmerFid:d.farmerFid,milk:d.milk,fat:d.fat,
+    rate:d.rate,amount:d.amount,date:d.date,dateStr:d.dateStr,timeStr:d.timeStr,receiptId:d.receiptId,fk:d.farmerKey};
+  if(id!==d.receiptId)e._sid=id;
+  return e;
+}
+function resolveFk(e,farmers){                           /* old index-based link → stable farmer key */
+  const f=farmers[e.farmerIdx];
+  if(f&&f.name===e.farmerName)return keyOf(f);
+  const m=farmers.filter(x=>x.name===e.farmerName);
+  if(m.length===1)return keyOf(m[0]);
+  if(f)return keyOf(f);
+  return '';
+}
+const byDateDesc=(a,b)=>(Date.parse(b.date)||0)-(Date.parse(a.date)||0)||(sidOf(a)<sidOf(b)?1:-1);
+
+/* ── outbox / bookkeeping ── */
+const ob=()=>lsGet('_outbox',{});
+const obSet=o=>lsSet('_outbox',o);
+function obDel(k){const o=ob();if(o[k]){delete o[k];obSet(o);}}
+const fbaseGet=()=>lsGet('_fbase',{});
+const fbaseSet=m=>lsSet('_fbase',m);
+function setFbase(id,r){const m=fbaseGet();m[id]={rev:r.rev||0,deleted:!!r.deleted,name:r.name,phone:r.phone,fid:r.fid,createdAt:r.createdAt};fbaseSet(m);}
+const sbaseGet=()=>lsGet('_sbase',{rev:0});
+const pendingCount=()=>Object.keys(ob()).length;
+const confList=()=>lsGet('_conf',[]);
+function qF(o,id,op){const k='F:'+id,it=o[k],b=fbaseGet()[id];o[k]={kind:'F',id,op,baseRev:it?it.baseRev:(b?b.rev:0),c:it?it.c:0};}
+function qE(o,id,op){o['E:'+id]={kind:'E',id,op};}
+function qS(o){const it=o['S'];o['S']={kind:'S',op:'put',baseRev:it?it.baseRev:(sbaseGet().rev||0),c:it?it.c:0};}
+
+/* ── DB hook: called by DB.set() for farmers / entries / rate / autoDelete (before saving) ── */
+function syncHook(k,old,v){
+  if(!SY.active)return v;
+  if(k==='farmers')return hookFarmers(old,v);
+  if(k==='entries')return hookEntries(old,v);
+  if(k==='rate'||k==='autoDelete'){
+    if(JSON.stringify(old)!==JSON.stringify(v)){const o=ob();qS(o);obSet(o);schedule();}
+  }
+  return v;
+}
+function reindexEntries(farmers){
+  const ents=rawGet('entries')||[];let ch=false;
+  const idx=new Map(farmers.map((f,i)=>[keyOf(f),i]));
+  ents.forEach(e=>{if(e.fk){const i=idx.has(e.fk)?idx.get(e.fk):-1;if(e.farmerIdx!==i){e.farmerIdx=i;ch=true;}}});
+  if(ch)rawSet('entries',ents);
+}
+function hookFarmers(old,v){
+  const arr=Array.isArray(v)?v:[];
+  arr.forEach((f,i)=>{if(typeof f.createdAt!=='number'||!isFinite(f.createdAt))f.createdAt=Date.now()+i;});
+  const seen=new Set();arr.forEach(f=>{while(seen.has(f.createdAt))f.createdAt+=1;seen.add(f.createdAt);});
+  const oldMap=new Map((Array.isArray(old)?old:[]).filter(f=>f&&typeof f.createdAt==='number').map(f=>[keyOf(f),f]));
+  const newMap=new Map(arr.map(f=>[keyOf(f),f]));
+  const o=ob();
+  newMap.forEach((f,id)=>{const p=oldMap.get(id);
+    if(!p||(p.name||'')!==(f.name||'')||(p.phone||'')!==(f.phone||'')||(p.fid||'')!==(f.fid||''))qF(o,id,'put');});
+  oldMap.forEach((f,id)=>{if(!newMap.has(id))qF(o,id,'del');});
+  obSet(o);
+  reindexEntries(arr);
+  schedule();
+  return v;
+}
+function hookEntries(old,v){
+  const arr=Array.isArray(v)?v:[];
+  const farmers=rawGet('farmers')||[];
+  const idx=new Map(farmers.map((f,i)=>[keyOf(f),i]));
+  arr.forEach(e=>{
+    if(!e._sid&&!e.receiptId)e._sid='LEG-'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+    if(!e.fk)e.fk=resolveFk(e,farmers);
+    if(e.fk&&idx.has(e.fk))e.farmerIdx=idx.get(e.fk);
+  });
+  const oldArr=Array.isArray(old)?old:[];
+  const oldIds=new Set(oldArr.map(sidOf));
+  const newIds=new Set(arr.map(sidOf));
+  const o=ob();
+  arr.forEach(e=>{const id=sidOf(e);if(id&&!oldIds.has(id))qE(o,id,'add');});
+  if(!SY.noDel)oldArr.forEach(e=>{const id=sidOf(e);if(id&&!newIds.has(id))qE(o,id,'del');});
+  obSet(o);
+  schedule();
+  return v;
+}
+
+/* ── UI helpers ── */
+function hhmm(t){const d=new Date(t);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+function setStatus(){
+  const el=$('au_sync_status');
+  if(!el)return;
+  if(!SY.active){el.textContent='';return;}
+  const n=pendingCount(),c=confList().length,online=navigator.onLine!==false;
+  let t;
+  if(SY.running)t=AUT('sy_syncing');
+  else if(c)t=AUT('sy_conf',{n:c});
+  else if(SY.err==='perm')t=AUT('sy_perm');
+  else if(SY.err==='quota')t=AUT('sy_quota');
+  else if(!online||SY.err==='net')t=n?AUT('sy_offline',{n}):AUT('sy_offline0');
+  else if(SY.err)t=AUT('sy_err');
+  else if(n)t=AUT('sy_pending',{n});
+  else t=AUT('sy_ok',{t:SY.lastOk?hhmm(SY.lastOk):'—'});
+  if(SY.skipped)t+='\n'+AUT('sy_skipped',{n:SY.skipped});
+  el.textContent=t;
+}
+const SELIDS=['ef_farmer','rep_farmer','bill_farmer'];
+function capSel(){                                       /* remember selected farmer by key, not by position */
+  const r={},farmers=DB.farmers();
+  SELIDS.forEach(id=>{const s=document.getElementById(id);if(s&&s.value!==''){const f=farmers[parseInt(s.value)];r[id]=f?keyOf(f):null;}});
+  return r;
+}
+function resSel(r){
+  const farmers=DB.farmers();
+  SELIDS.forEach(id=>{if(!(id in r))return;const s=document.getElementById(id);if(!s)return;
+    if(r[id]==null){s.value='';return;}
+    const i=farmers.findIndex(f=>keyOf(f)===r[id]);s.value=i>=0?String(i):'';});
+}
+function uiRefresh(){
+  try{
+    const ad=document.getElementById('sett_autodel');if(ad)ad.value=DB.autoDelete();
+    refreshAll();
+    const rp=document.getElementById('pg_reports');
+    if(rp&&rp.classList.contains('on')&&typeof renderReports==='function')renderReports();
+  }catch(e){console.error('uiRefresh',e);}
+}
+function farmerModalOpen(){const m=document.getElementById('modal_farmer');return !!(m&&m.classList.contains('on'));}
+
+/* ── dialogs (conflict / legacy import) ── */
+let dlgQ=Promise.resolve();
+function askDialog(title,body,b1,b2){
+  const p=dlgQ.then(()=>new Promise(res=>{
+    $('au_dt').textContent=title;$('au_db').textContent=body;$('au_d1').textContent=b1;
+    const d2=$('au_d2');d2.textContent=b2||'';d2.style.display=b2?'':'none';
+    window.__auDlgDone=r=>{$('au_dlg').classList.remove('on');window.__auDlgDone=null;res(r);};
+    $('au_dlg').classList.add('on');
+  }));
+  dlgQ=p.catch(()=>{});
+  return p;
+}
+function auDlg(r){if(window.__auDlgDone)window.__auDlgDone(r);}
+
+/* ── errors ── */
+function classify(e){
+  const c=(e&&e.code)||'',msg=(e&&e.message)||'';
+  if(c==='permission-denied'||c==='firestore/permission-denied')return 'perm';
+  if(c==='resource-exhausted'||c==='firestore/resource-exhausted')return 'quota';
+  if(['unavailable','deadline-exceeded','cancelled','auth/network-request-failed','firestore/unavailable'].includes(c)||/network|offline|Failed to fetch/i.test(msg))return 'net';
+  if(c==='unauthenticated')return 'auth';
+  return 'other';
+}
+
+/* ── lock so two open tabs do not sync at the same time ── */
+function lockTake(){try{const k=pfx()+'_lock',v=JSON.parse(localStorage.getItem(k)||'null'),now=Date.now();
+  if(v&&v.id!==SY.tabId&&now-v.ts<90000)return false;localStorage.setItem(k,JSON.stringify({id:SY.tabId,ts:now}));return true;}catch(e){return true;}}
+function lockBeat(){try{localStorage.setItem(pfx()+'_lock',JSON.stringify({id:SY.tabId,ts:Date.now()}));}catch(e){}}
+function lockRelease(){try{const k=pfx()+'_lock',v=JSON.parse(localStorage.getItem(k)||'null');if(v&&v.id===SY.tabId)localStorage.removeItem(k);}catch(e){}}
+
+/* ── PUSH: local outbox → cloud ── */
+async function pushFarmer(F,it){
+  const m=F.m,ref=m.doc(F.db,'users',F.uid,'farmers',it.id);
+  const local=(rawGet('farmers')||[]).find(f=>keyOf(f)===it.id);
+  if(it.op==='put'&&!local){obDel('F:'+it.id);return;}
+  const ld=local?farmerDoc(local):null;
+  const res=await wt(m.runTransaction(F.db,async tx=>{
+    const snap=await tx.get(ref);const cur=snap.exists()?snap.data():null;const curRev=cur?(cur.rev||0):0;
+    if(it.op==='put'){
+      if(cur&&curRev!==it.baseRev){if(!cur.deleted&&sameF(cur,ld))return{adopt:cur};return{conflict:cur};}
+      tx.set(ref,{name:ld.name,phone:ld.phone,fid:ld.fid,createdAt:ld.createdAt,rev:curRev+1,deleted:false,updatedAt:m.serverTimestamp()});
+      return{ok:true,rev:curRev+1};
+    }
+    if(!cur||cur.deleted)return{done:true,cur};
+    if(curRev!==it.baseRev&&!(it.baseRev===0&&curRev<=1))return{conflict:cur};
+    tx.set(ref,{name:cur.name,phone:cur.phone,fid:cur.fid,createdAt:cur.createdAt,rev:curRev+1,deleted:true,updatedAt:m.serverTimestamp()});
+    return{ok:true,rev:curRev+1,del:true,cur};
+  }),45000);
+  if(!F.live())return;
+  if(res.ok){setFbase(it.id,res.del?{...res.cur,rev:res.rev,deleted:true}:{...ld,rev:res.rev});obDel('F:'+it.id);}
+  else if(res.adopt){setFbase(it.id,res.adopt);obDel('F:'+it.id);}
+  else if(res.done){if(res.cur)setFbase(it.id,res.cur);obDel('F:'+it.id);}
+  else if(res.conflict){addConflict({key:'F:'+it.id,kind:'F',id:it.id,op:it.op,local:ld,remote:{...res.conflict,rev:res.conflict.rev||0}});}
+}
+async function pushSettings(F,it){
+  const m=F.m,ref=m.doc(F.db,'users',F.uid,'meta','settings');
+  const lr=parseFloat(rawGet('rate'))||9.5,la=rawGet('autoDelete')||'never';
+  const res=await wt(m.runTransaction(F.db,async tx=>{
+    const snap=await tx.get(ref);const cur=snap.exists()?snap.data():null;const curRev=cur?(cur.rev||0):0;
+    if(cur&&curRev!==it.baseRev){if(cur.rate===lr&&cur.autoDelete===la)return{adopt:cur};return{conflict:cur};}
+    tx.set(ref,{rate:lr,autoDelete:la,rev:curRev+1,updatedAt:m.serverTimestamp()});
+    return{ok:true,rev:curRev+1};
+  }),45000);
+  if(!F.live())return;
+  if(res.ok){lsSet('_sbase',{rev:res.rev,rate:lr,autoDelete:la});obDel('S');}
+  else if(res.adopt){lsSet('_sbase',{rev:res.adopt.rev||0,rate:res.adopt.rate,autoDelete:res.adopt.autoDelete});obDel('S');}
+  else if(res.conflict){addConflict({key:'S',kind:'S',id:'settings',op:'put',local:{rate:lr,autoDelete:la},remote:{...res.conflict,rev:res.conflict.rev||0}});}
+}
+async function pushEntries(F){
+  const m=F.m,db=F.db,o=ob();
+  const ents=rawGet('entries')||[];const byId=new Map(ents.map(e=>[sidOf(e),e]));
+  const adds=[],dels=[];
+  Object.keys(o).forEach(k=>{
+    const it=o[k];if(it.kind!=='E')return;
+    if(it.op==='add'){const e=byId.get(it.id);
+      if(!e){obDel(k);}
+      else if(!entryValid(e)){obDel(k);SY.skipped++;}      /* invalid entry stays on this device only */
+      else adds.push(it.id);
+    }else dels.push(it.id);
+  });
+  const ref=id=>m.doc(db,'users',F.uid,'entries',id);
+  const full=id=>({...entryDoc(byId.get(id)),deleted:false,updatedAt:m.serverTimestamp()});
+  for(let i=0;i<adds.length;i+=400){
+    const chunk=adds.slice(i,i+400);lockBeat();
+    try{
+      const b=m.writeBatch(db);chunk.forEach(id=>b.set(ref(id),full(id)));
+      await wt(b.commit(),60000);
+      if(!F.live())throw{code:'session-ended'};
+      chunk.forEach(id=>obDel('E:'+id));
+    }catch(e){
+      const c=classify(e);if(c!=='other')throw e;
+      for(const id of chunk){await wt(m.setDoc(ref(id),full(id)),30000);if(!F.live())throw{code:'session-ended'};obDel('E:'+id);}   /* isolate a single bad item */
+    }
+  }
+  for(let i=0;i<dels.length;i+=15){
+    const chunk=dels.slice(i,i+15);lockBeat();
+    const rs=await Promise.allSettled(chunk.map(id=>wt(m.updateDoc(ref(id),{deleted:true,updatedAt:m.serverTimestamp()}),30000)));
+    if(!F.live())throw{code:'session-ended'};
+    let fatal=null;
+    rs.forEach((r,j)=>{
+      if(r.status==='fulfilled'||(r.reason&&(r.reason.code==='not-found'||r.reason.code==='firestore/not-found')))obDel('E:'+chunk[j]);
+      else if(!fatal)fatal=r.reason;
+    });
+    if(fatal)throw fatal;
+  }
+}
+async function pushAll(F){
+  let o=ob();
+  const fk=Object.keys(o).filter(k=>k[0]==='F'&&!o[k].c);
+  for(const k of fk){if(!F.live())throw{code:'session-ended'};lockBeat();const it=ob()[k];if(it&&!it.c)await pushFarmer(F,it);}
+  o=ob();if(o['S']&&!o['S'].c)await pushSettings(F,o['S']);
+  await pushEntries(F);
+}
+
+/* ── PULL: cloud → local cache (only documents changed since last time) ── */
+async function fetchChanged(F,coll,cursor){
+  const m=F.m,col=m.collection(F.db,'users',F.uid,coll);const out=[];let max=cursor||0;
+  const base=cursor?[m.where('updatedAt','>',m.Timestamp.fromMillis(Math.max(0,cursor-120000)))]:[];
+  let q=m.query(col,...base,m.orderBy('updatedAt'),m.limit(400));
+  for(let g=0;g<1000;g++){
+    const snap=await wt(m.getDocs(q),45000);
+    snap.docs.forEach(d=>{const data=d.data();const t=data.updatedAt&&data.updatedAt.toMillis?data.updatedAt.toMillis():0;if(t>max)max=t;out.push({id:d.id,data});});
+    if(snap.docs.length<400)break;
+    q=m.query(col,...base,m.orderBy('updatedAt'),m.limit(400),m.startAfter(snap.docs[snap.docs.length-1]));
+  }
+  return{docs:out,max};
+}
+async function pullAll(F){
+  const m=F.m,mt=lsGet('_sync',{curF:0,curE:0});
+  const rf=await fetchChanged(F,'farmers',mt.curF);
+  const re=await fetchChanged(F,'entries',mt.curE);
+  const ss=await wt(m.getDoc(m.doc(F.db,'users',F.uid,'meta','settings')),30000);
+  if(!F.live())throw{code:'session-ended'};
+  applyRemote(rf.docs,re.docs,ss.exists()?ss.data():null);
+  mt.curF=Math.max(mt.curF||0,rf.max);mt.curE=Math.max(mt.curE||0,re.max);lsSet('_sync',mt);
+}
+function applyRemote(fdocs,edocs,sdata){
+  const sel=capSel(),o=ob();
+  /* farmers */
+  let farmers=rawGet('farmers')||[];const fbm=fbaseGet();let chF=false;
+  const byKey=new Map(farmers.map(f=>[keyOf(f),f]));
+  fdocs.forEach(({id,data:d})=>{
+    fbm[id]={rev:d.rev||0,deleted:!!d.deleted,name:d.name,phone:d.phone,fid:d.fid,createdAt:d.createdAt};
+    if(o['F:'+id])return;                                  /* local change pending → checked at push time */
+    const cur=byKey.get(id);
+    if(d.deleted){if(cur){farmers=farmers.filter(f=>keyOf(f)!==id);byKey.delete(id);chF=true;}}
+    else if(!cur){const nf={name:d.name,phone:d.phone||'',fid:d.fid||'',createdAt:d.createdAt};farmers.push(nf);byKey.set(id,nf);chF=true;}
+    else if(!sameF(cur,d)){cur.name=d.name;cur.phone=d.phone||'';cur.fid=d.fid||'';chF=true;}
+  });
+  fbaseSet(fbm);
+  if(chF){farmers.sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));rawSet('farmers',farmers);}
+  /* entries */
+  /* auto-delete keeps only recent entries on this phone; older cloud copies are simply not downloaded (the cloud keeps them) */
+  let adv=rawGet('autoDelete')||'never';if(sdata&&!o['S'])adv=sdata.autoDelete;
+  const cutMs=adv==='never'?0:Date.now()-parseInt(adv)*86400000;
+  const have=new Map();(rawGet('entries')||[]).forEach(e=>have.set(sidOf(e),e));let chE=false;
+  edocs.forEach(({id,data:d})=>{
+    const p=o['E:'+id];
+    if(d.deleted){if(have.has(id)&&!(p&&p.op==='add')){have.delete(id);chE=true;}return;}
+    if(have.has(id))return;
+    if(cutMs&&(Date.parse(d.date)||0)<cutMs)return;
+    if(p&&p.op==='del')return;
+    have.set(id,entryFromDoc(id,d));chE=true;
+  });
+  if(chE||chF){
+    const ents=Array.from(have.values());
+    const idx=new Map(farmers.map((f,i)=>[keyOf(f),i]));
+    ents.forEach(e=>{if(e.fk)e.farmerIdx=idx.has(e.fk)?idx.get(e.fk):-1;});
+    ents.sort(byDateDesc);
+    rawSet('entries',ents);
+  }
+  /* settings */
+  let chS=false;
+  if(sdata){
+    if(!o['S']){
+      if(parseFloat(rawGet('rate'))!==sdata.rate){rawSet('rate',sdata.rate);chS=true;}
+      if((rawGet('autoDelete')||'never')!==sdata.autoDelete){rawSet('autoDelete',sdata.autoDelete);chS=true;}
+    }
+    lsSet('_sbase',{rev:sdata.rev||0,rate:sdata.rate,autoDelete:sdata.autoDelete});
+  }
+  if(chF||chE||chS){uiRefresh();resSel(sel);}
+}
+
+/* ── conflicts: never overwrite silently, ask the user ── */
+function addConflict(c){
+  const list=confList().filter(x=>x.key!==c.key);list.push(c);lsSet('_conf',list);
+  const o=ob();if(o[c.key]){o[c.key].c=1;obSet(o);}
+}
+const fSum=d=>d&&!d.deleted?(d.name+(d.phone?' · '+d.phone:'')+(d.fid?' · ID '+d.fid:'')):AUT('conf_deleted');
+const sSum=d=>'Rate ₹'+d.rate+' · Auto-delete: '+d.autoDelete;
+function applyRemoteFarmer(id,r){
+  let farmers=rawGet('farmers')||[];const cur=farmers.find(f=>keyOf(f)===id);
+  if(r.deleted){if(cur)farmers=farmers.filter(f=>keyOf(f)!==id);}
+  else if(cur){cur.name=r.name;cur.phone=r.phone||'';cur.fid=r.fid||'';}
+  else farmers.push({name:r.name,phone:r.phone||'',fid:r.fid||'',createdAt:r.createdAt});
+  farmers.sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+  rawSet('farmers',farmers);reindexEntries(farmers);setFbase(id,r);
+}
+function resolveConflict(c,choice){
+  const sel=capSel();const o=ob();
+  if(choice==='cloud'){
+    if(c.kind==='F')applyRemoteFarmer(c.id,c.remote);
+    else{rawSet('rate',c.remote.rate);rawSet('autoDelete',c.remote.autoDelete);lsSet('_sbase',{rev:c.remote.rev,rate:c.remote.rate,autoDelete:c.remote.autoDelete});}
+    delete o[c.key];
+  }else if(o[c.key]){o[c.key].baseRev=c.remote.rev||0;o[c.key].c=0;}
+  obSet(o);
+  lsSet('_conf',confList().filter(x=>x.key!==c.key));
+  uiRefresh();resSel(sel);setStatus();
+}
+async function showConflicts(){
+  if(SY.confBusy)return;SY.confBusy=true;
+  try{
+    while(SY.active){
+      const list=confList();if(!list.length)break;
+      const c=list[0];
+      const body=c.kind==='F'
+        ?AUT('conf_f_body',{name:(c.local&&c.local.name)||c.remote.name||'',remote:fSum(c.remote),local:fSum(c.local)})
+        :AUT('conf_s_body',{remote:sSum(c.remote),local:sSum(c.local)});
+      const r=await askDialog(AUT('conf_title'),body,AUT('conf_keep_cloud'),AUT('conf_keep_mine'));
+      if(!SY.active)break;
+      resolveConflict(c,r===1?'cloud':'mine');
+    }
+  }finally{SY.confBusy=false;setStatus();}
+  if(SY.active&&pendingCount()>0)schedule(500);
+}
+
+/* ── the sync cycle ── */
+function schedule(ms){clearTimeout(SY.deb);SY.deb=setTimeout(()=>syncNow('change'),ms==null?2500:ms);setStatus();}
+async function syncNow(reason){
+  if(!SY.active)return;
+  clearTimeout(SY.deb);
+  if(SY.running){SY.rerun=true;return;}
+  if(navigator.onLine===false){setStatus();return;}
+  if(!lockTake()){setStatus();return;}
+  SY.running=true;SY.err='';SY.skipped=0;setStatus();
+  try{
+    const uid0=SY.uid;
+    const F=Object.assign({},await getFs(),{uid:uid0,live:()=>SY.active&&SY.uid===uid0});
+    if(!F.live())throw{code:'session-ended'};
+    await pushAll(F);
+    if(farmerModalOpen()){SY.deferPull=true;}          /* never reshuffle the farmer list while it is being edited */
+    else{SY.deferPull=false;await pullAll(F);}
+    SY.lastOk=Date.now();
+  }catch(e){
+    if(e&&e.code==='session-ended')SY.err='';
+    else{SY.err=classify(e);if(SY.err==='other'||SY.err==='auth')console.error('sync',e);}
+  }finally{
+    SY.running=false;lockRelease();setStatus();
+    if(SY.deferPull){SY.deferPull=false;schedule(4000);}
+    else if(SY.rerun){SY.rerun=false;schedule(500);}
+    else if(SY.err==='net'){schedule(60000);}
+    if(SY.active&&confList().length)showConflicts();
+  }
+}
+function auSyncNow(){syncNow('manual');if(confList().length)showConflicts();}
+
+/* ── session start / end ── */
+/* sync_owner: marks a per-account cache that was created by THIS sync engine for THIS uid.
+   No marker  → the cache is unknown / old test data → it is archived (never uploaded) and the account starts fresh,
+   then everything is downloaded from the cloud. The cloud is never touched by this step. */
+const OWNER_KEY='_sync_owner';
+function freshStartIfNeeded(){
+  const o=rawGet(OWNER_KEY);
+  if(o&&o.uid===SY.uid&&o.v===2)return false;
+  const names=['farmers','entries','rate','autoDelete','_sync','_outbox','_fbase','_sbase','_conf','_lock'];
+  const snap={};let any=false;
+  names.forEach(n=>{const v=localStorage.getItem(pfx()+n);if(v!=null){snap[n]=v;any=true;}});
+  if(any){try{localStorage.setItem('au_archive_'+SY.uid+'_'+Date.now(),JSON.stringify(snap));}catch(e){SY.archiveFailed=true;}}
+  names.forEach(n=>localStorage.removeItem(pfx()+n));
+  rawSet(OWNER_KEY,{uid:SY.uid,v:2,t:Date.now()});
+  return true;
+}
+/* Auto-delete only trims this phone's cache; it never writes a deletion to the cloud */
+function wrapAutoDelete(){
+  if(typeof runAutoDelete!=='function'||runAutoDelete.__au)return;
+  const orig=runAutoDelete;
+  const w=function(){SY.noDel=true;try{return orig();}finally{SY.noDel=false;}};
+  w.__au=true;window.runAutoDelete=w;
+}
+wrapAutoDelete();
+
+function startSession(u){
+  if(SY.active&&SY.uid===u.uid)return;
+  if(SY.active){endSession();location.reload();return;}   /* never switch accounts inside a live page */
+  SY.uid=u.uid;SY.active=true;SY.err='';SY.lastOk=0;
+  freshStartIfNeeded();
+  window.__dbUser=u.uid;window.__syncHook=syncHook;
+  uiRefresh();
+  try{runAutoDelete();}catch(e){}
+  clearInterval(SY.timer);SY.timer=setInterval(()=>{if(document.visibilityState==='visible')syncNow('timer');},300000);
+  setStatus();
+  syncNow('login').finally(()=>{if(confList().length)showConflicts();});
+}
+function endSession(){
+  if(!SY.active)return;
+  clearTimeout(SY.deb);clearInterval(SY.timer);lockRelease();
+  SY.active=false;window.__syncHook=null;window.__dbUser=null;SY.uid=null;
+}
+async function trySyncBeforeLogout(){
+  await Promise.race([syncNow('logout'),new Promise(r=>setTimeout(r,9000))]);
+  const t0=Date.now();while(SY.running&&Date.now()-t0<9000)await new Promise(r=>setTimeout(r,200));
+}
+window.addEventListener('online',()=>{if(SY.active)syncNow('online');setStatus();});
+window.addEventListener('offline',()=>setStatus());
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&SY.active&&Date.now()-SY.lastVis>30000){SY.lastVis=Date.now();syncNow('visible');}
+});
+/*SYNC-END*/
 
 /* ── Boot ──────────────────────────────────────────────────── */
 auApply();
